@@ -46,6 +46,7 @@ int main(int argc, char * argv[])
   if(argc < 2)
     {
       std::cout << "usage: server port" << std::endl;
+      exit(1);
     }
   else
     {
@@ -185,13 +186,11 @@ int main(int argc, char * argv[])
 	  // NOW WE HANDLE EVERYTHING
 	  // we have to receive a HTTP Protocol Based message and so something
 	  // with it
-	  std::string response = "GET 200 OK\nVersion: 2\nCreation: 1450879900184\nModification: 1450879901000\nContent-length:10\n\n0987654321";
-	  std::string sample_html_response = "<html>\n<head><title>Hello World</title></head>\n<body><h1>Hello World</h1></body>\n</html>";
-	  if(send(new_fd, sample_html_response.c_str(), sample_html_response.size(), 0) == -1)
+	  std::string welcome = "SERVER: You're now connected with the server, but I'm afraid I have to drop you :( sry mate";
+	  if(send(new_fd, welcome.c_str(), welcome.size(), 0) == -1)
 	    perror("send");
 	  else
 	    std::cout << "response sent!" << std::endl;
-	  
 	} // end of child process
 
       close(new_fd); // the parent doesn't need the connection, it will just keep listening
