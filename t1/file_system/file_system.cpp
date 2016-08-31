@@ -34,7 +34,7 @@ void FileSystem::set_data(std::string data)
   this->data = data;
 }
 
-void FileSystem::add_child(FileSystem child)
+void FileSystem::add_child(FileSystem * child)
 {
   this->children.push_back(child);
 }
@@ -49,9 +49,21 @@ std::string FileSystem::get_data()
   return this->data;
 }
 
-FileSystem FileSystem::get_child(int pos)
+FileSystem * FileSystem::get_child(int pos)
 {
   return this->children[pos];
+}
+
+FileSystem * FileSystem::get_child_by_name(std::string name)
+{
+  for(int i = 0; i < this->children.size(); i++)
+    {
+      if(this->children[i]->name == name)
+	{
+	  return this->children[i];
+	}
+    }
+  return NULL;
 }
 
 void FileSystem::print_state(bool print_children)
@@ -69,7 +81,7 @@ void FileSystem::print_state(bool print_children)
     {
       for(int i = 0; i < this->children.size(); i++)
 	{
-	  this->children[i].print_state(print_children);
+	  this->children[i]->print_state(print_children);
 	}
     }
   

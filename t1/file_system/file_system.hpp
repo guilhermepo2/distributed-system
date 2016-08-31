@@ -12,7 +12,7 @@ private:
   //data
   std::string name;
   std::string data;
-  std::vector<FileSystem> children;
+  std::vector<FileSystem*> children;
   
 public:
   FileSystem();
@@ -21,10 +21,11 @@ public:
 
   void set_name(std::string name);
   void set_data(std::string data);
-  void add_child(FileSystem child);
+  void add_child(FileSystem * child);
   std::string get_name();
   std::string get_data();
-  FileSystem get_child(int pos);
+  FileSystem * get_child(int pos);
+  FileSystem * get_child_by_name(std::string name);
 
   void print_state(bool print_children = false);
 };
