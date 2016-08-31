@@ -26,6 +26,19 @@ void sigchld_handler(int s)
 	while(waitpid(-1, NULL, WNOHANG) > 0);
 }
 
+// function get in addr
+// in stands for INPUT i guess...
+// basically it gets if its a IPv4 or a IPv6 address
+void * get_in_addr(struct sockaddr * sa)
+{
+  if(sa->sa_family == AF_INET)
+    {
+      return &(((struct sockaddr_in*)sa)->sin_addr);
+    }
+
+  return &(((struct sockaddr_in6*)sa)->sin6_addr);
+}
+
 int main(int argc, char * argv[])
 {
   // GETTING PORT VIA COMMAND LINE
@@ -49,6 +62,7 @@ int main(int argc, char * argv[])
   socklen_t sin_size;
   struct sigaction sa;
   int yes = 1;
+  char s[INET6_ADDRSTRLEN];
   int rv;
   
   memset(&hints, 0, sizeof hints);   // clean the structure, making sure it's empty
@@ -160,6 +174,7 @@ int main(int argc, char * argv[])
 	}
 
       // ntop = network to presentation
+      // why am I doing this again?
       inet_ntop(their_addr.ss_family,
 		get_in_addr((struct sockaddr *)&their_addr),
 		s, sizeof s);
@@ -170,7 +185,12 @@ int main(int argc, char * argv[])
 	  // NOW WE HANDLE EVERYTHING
 	  // we have to receive a HTTP Protocol Based message and so something
 	  // with it
-
+	  std::string response = "GET 200 OK\nVersion: 2\nCreation: 1450879900184\nModification: 1450879901000\nContent-length:10\n\n0987654321";
+	  std::string sample_html_response = "<html>\n<head><title>Hello World</title></head>\n<body><h1>Hello World</h1></body>\n</html>";
+	  if(send(new_fd, sample_html_response.c_str(), sample_html_response.size(), 0) == -1)
+	    perror("send");
+	  else
+	    std::cout << "response sent!" << std::endl;
 	  
 	} // end of child process
 
