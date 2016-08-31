@@ -19,13 +19,12 @@ public:
   FileSystem(std::string name);
   FileSystem(std::string name, std::string data);
 
-  void setName(std::string name);
-  void setData(std::string data);
-  void addChild(FileSystem child);
-  void removeChild(FileSystem child);
+  void set_name(std::string name);
+  void set_data(std::string data);
+  void add_child(FileSystem child);
   std::string get_name();
   std::string get_data();
-  FileSystem get_children(int pos);
+  FileSystem get_child(int pos);
 
-  void print_state();
+  void print_state(bool print_children = false);
 };
