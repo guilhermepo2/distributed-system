@@ -36,8 +36,8 @@ void *get_in_addr(struct sockaddr *sa)
 int main(int argc, char * argv[])
 {
 
+  // getting port via command line
   char * port;
-  
   if(argc < 2)
     {
       std::cout << "usage: ./server port" << std::endl;
@@ -49,92 +49,135 @@ int main(int argc, char * argv[])
       std::cout << "port: " << port << std::endl;
     }
   
+  
   int sockfd, new_fd;  // listen on sock_fd, new connection on new_fd
   struct addrinfo hints, *servinfo, *p;
   struct sockaddr_storage their_addr; // connector's address information
   socklen_t sin_size;
-	struct sigaction sa;
-	int yes=1;
-	char s[INET6_ADDRSTRLEN];
-	int rv;
+  struct sigaction sa;
+  int yes=1;
+  char s[INET6_ADDRSTRLEN];
+  int rv;
+  
+  memset(&hints, 0, sizeof hints); // clean the struct, making sure its empty
+  hints.ai_family = AF_UNSPEC;     // dont care if IPv4 or IPv6
+  hints.ai_socktype = SOCK_STREAM; // SOCK_STREAM = TCP
+  hints.ai_flags = AI_PASSIVE;     // use my IP
 
-	memset(&hints, 0, sizeof hints);
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_PASSIVE; // use my IP
+  // getaddrinfo() - prepare to launch!
+  // does all kind of good stuff for you
+  if ((rv = getaddrinfo(NULL, port, &hints, &servinfo)) != 0) {
+    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
+    return 1;
+  }
 
-	if ((rv = getaddrinfo(NULL, port, &hints, &servinfo)) != 0) {
-		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
-		return 1;
-	}
+  // loop through all the results and bind to the first we can
 
-	// loop through all the results and bind to the first we can
-	for(p = servinfo; p != NULL; p = p->ai_next) {
-		if ((sockfd = socket(p->ai_family, p->ai_socktype,
-				p->ai_protocol)) == -1) {
-			perror("server: socket");
-			continue;
-		}
+  // socket()
+  // feed the result of getaddrinfo() to socket()
+  // you use sockets for later system calls using the network
+  
+  for(p = servinfo; p != NULL; p = p->ai_next) {
+    if ((sockfd = socket(p->ai_family, p->ai_socktype,
+			 p->ai_protocol)) == -1) {
+      perror("server: socket");
+      continue;
+    }
 
-		if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes,
-				sizeof(int)) == -1) {
-			perror("setsockopt");
-			exit(1);
-		}
+    // if theres a socket remaining in the port (from previous use)
+    // please free it
+    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes,
+		   sizeof(int)) == -1) {
+      perror("setsockopt");
+      exit(1);
+    }
+    
+    // bind()
+    // associate the socket with a local port
+    if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+      close(sockfd);
+      perror("server: bind");
+      continue;
+    }
+    
+    break;
+  }
 
-		if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-			close(sockfd);
-			perror("server: bind");
-			continue;
-		}
+  // if p == null no socket could be binded
+  if (p == NULL)  {
+    fprintf(stderr, "server: failed to bind\n");
+    return 2;
+  }
 
-		break;
-	}
+  // free the linked list obtained in getaddrinfo()
+  // we already binded it, so who cares
+  freeaddrinfo(servinfo);
 
-	if (p == NULL)  {
-		fprintf(stderr, "server: failed to bind\n");
-		return 2;
-	}
+  //Listen() Will Somebody please Call Me?
+  if (listen(sockfd, BACKLOG) == -1) {
+    perror("listen");
+    exit(1);
+  }
+  
+  sa.sa_handler = sigchld_handler; // reap all dead processes
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = SA_RESTART;
+  if (sigaction(SIGCHLD, &sa, NULL) == -1) {
+    perror("sigaction");
+    exit(1);
+  }
+  
+  printf("server: waiting for connections...\n");
+  
+  while(1) {  // main accept() loop
+    sin_size = sizeof their_addr;
 
-	freeaddrinfo(servinfo); // all done with this structure
+    // accept() - Thank you for calling
+    new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
+    if (new_fd == -1) {
+      perror("accept");
+      continue;
+    }
 
-	if (listen(sockfd, BACKLOG) == -1) {
-		perror("listen");
-		exit(1);
-	}
+    // ntop = network to presentation
+    inet_ntop(their_addr.ss_family,
+	      get_in_addr((struct sockaddr *)&their_addr),
+	      s, sizeof s);
+    printf("server: got connection from %s\n", s);
+    
+    if (!fork()) { // this is the child process
+      close(sockfd); // child doesn't need the listener
 
-	sa.sa_handler = sigchld_handler; // reap all dead processes
-	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = SA_RESTART;
-	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
-		perror("sigaction");
-		exit(1);
-	}
+      /* ============================================ */
+      // CONNECTION ESTABILISHED HERE
+      std::string msg = "You are connected!";
+      if (send(new_fd, msg.c_str(), msg.size(), 0) == -1)
+	perror("send");
 
-	printf("server: waiting for connections...\n");
+      //note: see that how the message is sent, it is created as as c++ string, but the send function requires a char * string, we can achieve that using the c_str() function on the c++ string, and also, to inform how many bytes are going over the network we have just to get the size from the c++ string
 
-	while(1) {  // main accept() loop
-		sin_size = sizeof their_addr;
-		new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
-		if (new_fd == -1) {
-			perror("accept");
-			continue;
-		}
-
-		inet_ntop(their_addr.ss_family,
-			get_in_addr((struct sockaddr *)&their_addr),
-			s, sizeof s);
-		printf("server: got connection from %s\n", s);
-
-		if (!fork()) { // this is the child process
-			close(sockfd); // child doesn't need the listener
-			if (send(new_fd, "Hello, world!", 13, 0) == -1)
-				perror("send");
-			close(new_fd);
-			exit(0);
-		}
-		close(new_fd);  // parent doesn't need this
-	}
-
-	return 0;
+      // now we can listen to the client and send acks!
+      std::string ack = "ACK";
+      char buf[1024];
+      
+      int size;
+      // wait for a message, prints it and sends an ack
+      if(recv(new_fd, buf, 1024, 0) == -1)
+	perror("receive");
+      
+      std::cout << "received:" << buff << std::endl;
+      
+      if(send(new_fd, ack.c_str(), ack.size(), 0) == -1)
+	 perror("send");
+      /* ============================================ */
+      // GOODBYE CLIENT SEE YOU
+      close(new_fd);
+      exit(0);  // note that the CHILD process will end here
+                // the parent will still be running, so the server too
+    }
+    
+    close(new_fd);  // parent doesn't need this
+  }
+  
+  return 0;
 }
