@@ -186,11 +186,23 @@ int main(int argc, char * argv[])
 	  // NOW WE HANDLE EVERYTHING
 	  // we have to receive a HTTP Protocol Based message and so something
 	  // with it
-	  std::string welcome = "SERVER: You're now connected with the server, but I'm afraid I have to drop you :( sry mate";
+	  std::string welcome = "<html>\n<body><h1>Hello World</h1></body>\n</html>";
+	  std::string welcome2 = "SERVER: You're now connected with the server, but I'm afraid I have to drop you :( sry mate";
 	  if(send(new_fd, welcome.c_str(), welcome.size(), 0) == -1)
 	    perror("send");
 	  else
-	    std::cout << "response sent!" << std::endl;
+	    std::cout << "SERVER: greeting sent!" << std::endl;
+
+	  
+	  // ALSO, let's get a message, so we can see what a real browser send to us
+	  char buffer[1024];
+	  int numbytes;
+	  if ((numbytes = recv(new_fd, buffer, 1023, 0)) == -1) {
+	    perror("recv");
+	    exit(1);
+	  }
+	  buffer[numbytes] = '\0';
+	  std::cout << "SERVER: We received a message :^) This is the message: \n" << buffer << std::endl; 
 	} // end of child process
 
       close(new_fd); // the parent doesn't need the connection, it will just keep listening
