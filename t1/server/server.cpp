@@ -17,6 +17,7 @@
 #include <signal.h>
 
 #include "tokenizer.hpp"
+#include "http.hpp"
 
 #define BACKLOG 10 // maximum pending connections
 
@@ -217,32 +218,42 @@ int main(int argc, char * argv[])
 	    }
 	  else if (tokens[0] == "HEAD")
 	    {
+	      HTTP::handleHEAD();
 	    }
 	  else if (tokens[0] == "POST")
 	    {
+	      HTTP::handlePOST();
 	    }
 	  else if (tokens[0] == "PUT")
 	    {
+	      HTTP::handlePUT();
 	    }
 	  else if (tokens[0] == "DELETE")
 	    {
+	      HTTP::handleDELETE();
 	    }
 	  else if (tokens[0] == "TRACE")
 	    {
+	      HTTP::handleTRACE();
 	    }
 	  else if (tokens[0] == "OPTIONS")
 	    {
+	      HTTP::handleOPTIONS();
 	    }
 	  else if (tokens[0] == "CONNECT")
 	    {
+	      HTTP::handleCONNECT();
 	    }
 	  else if (tokens[0] == "PATCH")
 	    {
+	      HTTP::handlePATCH();
 	    }
 	  else
 	    {
-	      // UNKNOWN
+	      std::cout << "BAD REQUISITIONS" << std::endl;
 	    }
+
+	  
 	} // end of child process
 
       close(new_fd); // the parent doesn't need the connection, it will just keep listening
