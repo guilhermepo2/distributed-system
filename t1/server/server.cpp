@@ -3,7 +3,6 @@
 
  */
 
-#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -16,6 +15,8 @@
 #include <arpa/inet.h>
 #include <sys/wait.h>
 #include <signal.h>
+
+#include "tokenizer.hpp"
 
 #define BACKLOG 10 // maximum pending connections
 
@@ -207,9 +208,41 @@ int main(int argc, char * argv[])
 	    exit(1);
 	  }
 	  buffer[numbytes] = '\0';
-	  //std::cout << "SERVER: We received a message :^) This is the message: \n" << buffer << std::endl;
-	  std::cout << buffer << std::endl;
-	  // now we have the message, we should process it.
+	  
+	  std::vector<std::string> tokens = Tokenizer::split(buffer);
+
+	  if(tokens[0] == "GET")
+	    {
+	      HTTP::handleGET(tokens);
+	    }
+	  else if (tokens[0] == "HEAD")
+	    {
+	    }
+	  else if (tokens[0] == "POST")
+	    {
+	    }
+	  else if (tokens[0] == "PUT")
+	    {
+	    }
+	  else if (tokens[0] == "DELETE")
+	    {
+	    }
+	  else if (tokens[0] == "TRACE")
+	    {
+	    }
+	  else if (tokens[0] == "OPTIONS")
+	    {
+	    }
+	  else if (tokens[0] == "CONNECT")
+	    {
+	    }
+	  else if (tokens[0] == "PATCH")
+	    {
+	    }
+	  else
+	    {
+	      // UNKNOWN
+	    }
 	} // end of child process
 
       close(new_fd); // the parent doesn't need the connection, it will just keep listening
