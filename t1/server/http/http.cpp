@@ -3,26 +3,37 @@
 
 namespace HTTP
 {
-  FileSystem * fs = NULL;
-
-  void initFileSystem()
+  void checkFSRoot()
   {
-    if (fs == NULL)
-      fs = new FileSystem;
-
-    fs->insert("/obladi/oblada");
+    std::cout << "CHECKING FILE SYSTEM ROOT" << std::endl;
+    std::cout << "Root: " << FileSystem::instance()->getRoot() << std::endl;
+    std::cout << "Root: " << FileSystem::instance()->getRoot() << std::endl;
+    std::cout << "Root: " << FileSystem::instance()->getRoot() << std::endl;
+    std::cout << "Root: " << FileSystem::instance()->getRoot() << std::endl;
+    std::cout << "Root: " << FileSystem::instance()->getRoot() << std::endl;
+    std::cout << "Root: " << FileSystem::instance()->getRoot() << std::endl;
+    std::cout << "Root: " << FileSystem::instance()->getRoot() << std::endl;
+    std::cout << "Root: " << FileSystem::instance()->getRoot() << std::endl;
+    std::cout << "Root: " << FileSystem::instance()->getRoot() << std::endl;
+    std::cout << "Root: " << FileSystem::instance()->getRoot() << std::endl;
   }
-  
   std::string notfound(std::string content)
   {
     std::string message = "HTTP/1.1 404 NOT FOUND\nContent-type: text/html\nConnection: Closed\r\n\r\n<!DOCTYPE HTML PUBLIC><html><head><title>404 Not Found</title></head><body><h1>404 Not Found</h1><p>The path " + content + " is invalid or does not exist</p></body></html>";
 
     return message;
   }
+
+  std::string badrequest(std::string content)
+  {
+    std::string message = "HTTP/1.1 400 BAD REQUEST\nContent-type: text/html\nConnection: Closed\r\n\r\n<!DOCTYPE HTML PUBLIC><html><head><title>400 Bad Request</title></head><body><h1>400 Bad Request</h1><p>" + content + "</p></body></html>";
+
+    return message;
+  }
   
   std::string handleGET(std::vector<std::string> tokens)
   { 
-    Node * result = fs->search(tokens[1]);
+    Node * result = FileSystem::instance()->search(tokens[1]);
     
     if(result == NULL)
       {
@@ -44,7 +55,7 @@ namespace HTTP
   
   std::string handleHEAD(std::vector<std::string> tokens)
   {
-    Node * result = fs->search(tokens[1]);
+    Node * result = FileSystem::instance()->search(tokens[1]);
     
     if(result == NULL)
       {
@@ -64,14 +75,48 @@ namespace HTTP
     return "HTTP/1.1 200 OK\nVersion: "+version.str()+"\nCreation: "+creation.str()+"\nModification: "+modification.str()+"\nContent Length: "+content_length.str()+"\nContent-type: text/html\nConnection:Closed\r\n\r\n";
   }
   
-  std::string handlePUT()
+  std::string handlePUT(std::vector<std::string> tokens)
   {
-    return "HTTP/1.1 200 OK\nContent-type: text/html\nConnection: Closed\r\n\r\n<!DOCTYPE HTML PUBLIC><html><head><title>200 OK</title></head><body><h1>PUT 200 OK</h1><p>It Works.</p></body></html>";
+    Node * result = FileSystem::instance()->edit(tokens[1], tokens[tokens.size() - 1]);
+    if(result == NULL)
+      {
+	return notfound(tokens[1]);
+      }
+    
+    std::ostringstream version;
+    version << result->get_version();
+    std::ostringstream creation;
+    creation << result->get_creation();
+    std::ostringstream modification;
+    modification << result->get_modification();
+
+    return "HTTP/1.1 200 OK\nVersion: "+version.str()+"\nCreation: "+creation.str()+"\nModification: "+modification.str()+"\nContent-type: text/html\nConnection:Closed\r\n\r\n";
   }
 
-  std::string handlePOST()
+  std::string handlePOST(std::vector<std::string> tokens)
   {
-    return "HTTP/1.1 200 OK\nContent-type: text/html\nConnection: Closed\r\n\r\n<!DOCTYPE HTML PUBLIC><html><head><title>200 OK</title></head><body><h1>POST 200 OK</h1><p>It Works.</p></body></html>";
+    #if DEBUG
+    std::cout << "Inserting: " << tokens[1] << " with content: " << tokens[tokens.size()-1] << std::endl;
+    #endif
+    
+    // return the new inserted children
+    Node * result = FileSystem::instance()->insert(tokens[1], tokens[tokens.size() - 1]);
+
+    // something went wrong
+    if(result == NULL)
+      {
+	return badrequest("Path is invalid or already exist");
+      }
+    
+    std::ostringstream version;
+    version << result->get_version();
+    std::ostringstream creation;
+    creation << result->get_creation();
+    std::ostringstream modification;
+    modification << result->get_modification();
+
+    //fs->printFS();
+    return "HTTP/1.1 200 OK\nVersion: "+version.str()+"\nCreation: "+creation.str()+"\nModification: "+modification.str()+"\nContent-type: text/html\nConnection:Closed\r\n\r\n";
   }
   
   std::string handleDELETE()

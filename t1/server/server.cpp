@@ -159,7 +159,6 @@ int main(int argc, char * argv[])
     }
   
   std::cout << "SERVER ON!" << std::endl;
-  HTTP::initFileSystem();
   
   std::cout << "SERVER: Waiting for connections..." << std::endl;
 
@@ -189,19 +188,6 @@ int main(int argc, char * argv[])
 	  // NOW WE HANDLE EVERYTHING
 	  // we have to receive a HTTP Protocol Based message and so something
 	  // with it
-
-	  /*
-	    Why should the server send any message?
-
-	    std::string welcome = "<html>\n<body><h1>Hello World</h1></body>\n</html>";
-	    std::string welcome2 = "SERVER: You're now connected with the server, but I'm afraid I have to drop you :( sry mate";
-	    if(send(new_fd, welcome.c_str(), welcome.size(), 0) == -1)
-	    perror("send");
-	    else
-	    std::cout << "SERVER: greeting sent!" << std::endl;
-	  */
-	  
-
 	  
 	  // We get the requisition.
 	  char buffer[1024];
@@ -229,11 +215,11 @@ int main(int argc, char * argv[])
 	    }
 	  else if (tokens[0] == "POST")
 	    {
-	      msg = HTTP::handlePOST();
+	      msg = HTTP::handlePOST(tokens);
 	    }
 	  else if (tokens[0] == "PUT")
 	    {
-	      msg = HTTP::handlePUT();
+	      msg = HTTP::handlePUT(tokens);
 	    }
 	  else if (tokens[0] == "DELETE")
 	    {

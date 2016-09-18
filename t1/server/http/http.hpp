@@ -7,12 +7,13 @@
 
 namespace HTTP
 {
-  void initFileSystem();                                    // EM TESE OK
+  void checkFSRoot();
   std::string handleGET(std::vector<std::string> tokens);   // OK
   std::string handleHEAD(std::vector<std::string> tokens);  // OK
-  std::string handlePUT();                                  // PROXIMO
-  std::string handlePOST();
-  std::string handleDELETE();
+  std::string handlePUT(std::vector<std::string> tokens);   // OK
+  std::string handlePOST(std::vector<std::string> tokens);  // OK (em tese)
+  // o ponteiro da raiz as vezes se perde aleatoriamente, a mesma requisicao feita varias vezes no mesmo contexto gera resultados diferentes
+  std::string handleDELETE();                               // IMPLEMENTAR
   std::string notImplemented();                             // OK
 }
 

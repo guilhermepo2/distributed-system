@@ -25,6 +25,7 @@ public:
 
   void set_name(std::string name);
   void set_data(std::string data);
+  void modify();
   void add_child(Node * child);
   std::string get_name();
   std::string get_data();

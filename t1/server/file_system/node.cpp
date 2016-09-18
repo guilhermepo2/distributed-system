@@ -24,6 +24,12 @@ Node::Node(std::string name, std::string data)
   this->version = 0;
 }
 
+void Node::modify()
+{
+  time(&this->modification);
+  this->version++;
+}
+
 void Node::set_name(std::string name)
 {
   this->name = name;

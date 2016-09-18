@@ -9,14 +9,19 @@ class FileSystem
 {
 private:
   Node * root = NULL;
+  FileSystem() {}
+  static FileSystem * s_instance;
   
 public:
-  FileSystem() {}
+  static FileSystem *instance();
   Node * getRoot();
-  Node * insert(std::string url);
+  Node * insert(std::string url, std::string content);
   Node * remove(std::string url);
   Node * edit(std::string url, std::string content);
   Node * search(std::string url);
+  Node * searchParent(std::string url);
+
+  void printFS();
 };
 
 #endif

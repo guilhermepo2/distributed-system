@@ -10,7 +10,7 @@ namespace Tokenizer
       {
 	const char * begin = str;
 	
-	while(*str != c && *str)
+	while((*str != c && *str != '\n') && *str)
 	  str++;
 	
 	result.push_back(std::string(begin,str));

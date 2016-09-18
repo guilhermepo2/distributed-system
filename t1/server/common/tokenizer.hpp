@@ -10,3 +10,10 @@ namespace Tokenizer
 }
 
 #endif
+
+#ifndef DEV
+#define DEV
+
+#define DEBUG 1
+
+#endif
