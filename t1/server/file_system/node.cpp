@@ -1,13 +1,13 @@
-#include "file_system.hpp"
+#include "node.hpp"
 
-FileSystem::FileSystem()
+Node::Node()
 {
   time(&this->creation);
   time(&this->modification);
   this->version = 0;
 }
 
-FileSystem::FileSystem(std::string name)
+Node::Node(std::string name)
 {
   this->name = name;
   time(&this->creation);
@@ -15,7 +15,7 @@ FileSystem::FileSystem(std::string name)
   this->version = 0;
 }
 
-FileSystem::FileSystem(std::string name, std::string data)
+Node::Node(std::string name, std::string data)
 {
   this->name = name;
   this->data = data;
@@ -24,37 +24,42 @@ FileSystem::FileSystem(std::string name, std::string data)
   this->version = 0;
 }
 
-void FileSystem::set_name(std::string name)
+void Node::set_name(std::string name)
 {
   this->name = name;
 }
 
-void FileSystem::set_data(std::string data)
+void Node::set_data(std::string data)
 {
   this->data = data;
 }
 
-void FileSystem::add_child(FileSystem * child)
+void Node::add_child(Node * child)
 {
   this->children.push_back(child);
 }
 
-std::string FileSystem::get_name()
+int Node::get_version()
+{
+  return this->version;
+}
+
+std::string Node::get_name()
 {
   return this->name;
 }
 
-std::string FileSystem::get_data()
+std::string Node::get_data()
 {
   return this->data;
 }
 
-FileSystem * FileSystem::get_child(int pos)
+Node * Node::get_child(int pos)
 {
   return this->children[pos];
 }
 
-FileSystem * FileSystem::get_child_by_name(std::string name)
+Node * Node::get_child_by_name(std::string name)
 {
   for(int i = 0; i < this->children.size(); i++)
     {
@@ -66,7 +71,7 @@ FileSystem * FileSystem::get_child_by_name(std::string name)
   return NULL;
 }
 
-void FileSystem::print_state(bool print_children)
+void Node::print_state(bool print_children)
 {
   std::cout << "Printing" << std::endl;
   std::cout << "Name: " << this->name << std::endl;
@@ -85,4 +90,19 @@ void FileSystem::print_state(bool print_children)
 	}
     }
   
+}
+
+time_t Node::get_creation()
+{
+  return this->creation;
+}
+
+time_t Node::get_modification()
+{
+  return this->modification;
+}
+
+int Node::get_size()
+{
+  return this->children.size();
 }

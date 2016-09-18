@@ -16,8 +16,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 
-#include "tokenizer.hpp"
-#include "http.hpp"
+#include "http/http.hpp"
 
 #define BACKLOG 10 // maximum pending connections
 
@@ -158,8 +157,10 @@ int main(int argc, char * argv[])
     {
       std::cout << "successful call: sigaction()" << std::endl;
     }
-
+  
   std::cout << "SERVER ON!" << std::endl;
+  HTTP::initFileSystem();
+  
   std::cout << "SERVER: Waiting for connections..." << std::endl;
 
   // everything set
@@ -199,6 +200,7 @@ int main(int argc, char * argv[])
 	    else
 	    std::cout << "SERVER: greeting sent!" << std::endl;
 	  */
+	  
 
 	  
 	  // We get the requisition.
@@ -209,51 +211,47 @@ int main(int argc, char * argv[])
 	    exit(1);
 	  }
 	  buffer[numbytes] = '\0';
+	  std::cout << "=======================================" << std::endl;
+	  std::cout << "SERVER: New Requisition" << std::endl;
+	  std::cout << buffer << std::endl;
+	  std::cout << "=======================================" << std::endl;
 	  
 	  std::vector<std::string> tokens = Tokenizer::split(buffer);
-
+	  std::string msg;
+	  
 	  if(tokens[0] == "GET")
 	    {
-	      HTTP::handleGET(tokens);
+	      msg = HTTP::handleGET(tokens);
 	    }
 	  else if (tokens[0] == "HEAD")
 	    {
-	      HTTP::handleHEAD();
+	      msg = HTTP::handleHEAD(tokens);
 	    }
 	  else if (tokens[0] == "POST")
 	    {
-	      HTTP::handlePOST();
+	      msg = HTTP::handlePOST();
 	    }
 	  else if (tokens[0] == "PUT")
 	    {
-	      HTTP::handlePUT();
+	      msg = HTTP::handlePUT();
 	    }
 	  else if (tokens[0] == "DELETE")
 	    {
-	      HTTP::handleDELETE();
-	    }
-	  else if (tokens[0] == "TRACE")
-	    {
-	      HTTP::handleTRACE();
-	    }
-	  else if (tokens[0] == "OPTIONS")
-	    {
-	      HTTP::handleOPTIONS();
-	    }
-	  else if (tokens[0] == "CONNECT")
-	    {
-	      HTTP::handleCONNECT();
-	    }
-	  else if (tokens[0] == "PATCH")
-	    {
-	      HTTP::handlePATCH();
+	      msg = HTTP::handleDELETE();
 	    }
 	  else
 	    {
-	      std::cout << "BAD REQUISITIONS" << std::endl;
+	      msg = HTTP::notImplemented();
 	    }
 
-	  
+	  if(send(new_fd, msg.c_str(), msg.size(), 0) == -1)
+	    perror("send");
+	  else
+	    {
+	      std::cout << "=======================================" << std::endl;
+	      std::cout << "SERVER: Response Sent!\n" << msg << std::endl;
+	      std::cout << "=======================================" << std::endl;
+	    }
 	} // end of child process
 
       close(new_fd); // the parent doesn't need the connection, it will just keep listening
