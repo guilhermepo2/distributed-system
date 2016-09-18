@@ -183,8 +183,8 @@ int main(int argc, char * argv[])
 		s, sizeof s);
       std::cout << "SERVER: got connection from: " << s << std::endl;
 
-      if(!fork())
-	{ // the child process will handle the connection
+      //if(!fork())
+      //{ // the child process will handle the connection
 	  // NOW WE HANDLE EVERYTHING
 	  // we have to receive a HTTP Protocol Based message and so something
 	  // with it
@@ -238,7 +238,7 @@ int main(int argc, char * argv[])
 	      std::cout << "SERVER: Response Sent!\n" << msg << std::endl;
 	      std::cout << "=======================================" << std::endl;
 	    }
-	} // end of child process
+	  //} // end of child process
 
       close(new_fd); // the parent doesn't need the connection, it will just keep listening
     }

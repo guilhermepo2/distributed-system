@@ -122,10 +122,13 @@ Node * FileSystem::search(std::string url)
   if(search_node->get_name() != urlTokens[i])
     return NULL;
   i++;
+  
+  if(urlTokens[i] == "") i++;
 
   for(; (search_node != NULL && i < urlTokens.size()); i++)
     {
-      search_node = search_node->get_child_by_name(urlTokens[i]);
+      if(urlTokens[i] != "")
+	search_node = search_node->get_child_by_name(urlTokens[i]);
     }
 
   return search_node;
