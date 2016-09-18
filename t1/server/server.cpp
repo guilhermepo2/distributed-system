@@ -235,7 +235,8 @@ int main(int argc, char * argv[])
 	  else
 	    {
 	      std::cout << "=======================================" << std::endl;
-	      std::cout << "SERVER: Response Sent!\n" << msg << std::endl;
+	      //std::cout << "SERVER: Response Sent!\n" << msg << std::endl;
+	      std::cout << "SERVER: Response Sent!\n" << std::endl;
 	      std::cout << "=======================================" << std::endl;
 	    }
 	  //} // end of child process

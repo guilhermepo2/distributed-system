@@ -3,6 +3,34 @@
 
 namespace HTTP
 {
+  std::string get_full_message(std::vector<std::string> tokens)
+  {
+    std::string msg = "";
+    
+    #if DEBUG
+    for(int i = 0; i < tokens.size(); i++)
+      {
+	if(tokens[i] == "\r")
+	  std::cout << "token " << i << ": " << tokens[i] << std::endl;
+      }
+    #endif
+
+    int i;
+    for(i = 0; (tokens[i] != "\r" && i < tokens.size()); i++);
+
+    for(; i < tokens.size() - 1; i++)
+      msg += (tokens[i] + " ");
+
+    msg += tokens[tokens.size() - 1];
+
+    if(msg.size() > 1024)
+      {
+	msg.erase(msg.begin()+1024, msg.end());
+      }
+    
+    return msg;
+  }
+  
   void checkFSRoot()
   {
     std::cout << "CHECKING FILE SYSTEM ROOT" << std::endl;
@@ -17,6 +45,7 @@ namespace HTTP
     std::cout << "Root: " << FileSystem::instance()->getRoot() << std::endl;
     std::cout << "Root: " << FileSystem::instance()->getRoot() << std::endl;
   }
+  
   std::string notfound(std::string content)
   {
     std::string message = "HTTP/1.1 404 NOT FOUND\nContent-type: text/html\nConnection: Closed\r\n\r\n<!DOCTYPE HTML PUBLIC><html><head><title>404 Not Found</title></head><body><h1>404 Not Found</h1><p>The path " + content + " is invalid or does not exist</p></body></html>";
@@ -32,7 +61,7 @@ namespace HTTP
   }
   
   std::string handleGET(std::vector<std::string> tokens)
-  { 
+  {
     Node * result = FileSystem::instance()->search(tokens[1]);
     
     if(result == NULL)
@@ -77,7 +106,10 @@ namespace HTTP
   
   std::string handlePUT(std::vector<std::string> tokens)
   {
-    Node * result = FileSystem::instance()->edit(tokens[1], tokens[tokens.size() - 1]);
+    // get full message from tokens
+    std::string full_message = get_full_message(tokens);
+    
+    Node * result = FileSystem::instance()->edit(tokens[1], full_message);
     if(result == NULL)
       {
 	return notfound(tokens[1]);
@@ -90,7 +122,7 @@ namespace HTTP
     std::ostringstream modification;
     modification << result->get_modification();
 
-    return "HTTP/1.1 200 OK\nVersion: "+version.str()+"\nCreation: "+creation.str()+"\nModification: "+modification.str()+"\nContent-type: text/html\nConnection:Closed\r\n\r\n<!DOCTYPE HTML PUBLIC><html><head><title>200 OK</title></head><body><h1>PUT 200 OK</h1><p>Edited "+tokens[1]+" to content: "+tokens[tokens.size()-1]+"</p></body></html>";
+    return "HTTP/1.1 200 OK\nVersion: "+version.str()+"\nCreation: "+creation.str()+"\nModification: "+modification.str()+"\nContent-type: text/html\nConnection:Closed\r\n\r\n<!DOCTYPE HTML PUBLIC><html><head><title>200 OK</title></head><body><h1>PUT 200 OK</h1><p>Edited "+tokens[1]+" to content: "+full_message+"</p></body></html>";
   }
 
   std::string handlePOST(std::vector<std::string> tokens)
@@ -98,9 +130,12 @@ namespace HTTP
     #if DEBUG
     std::cout << "Inserting: " << tokens[1] << " with content: " << tokens[tokens.size()-1] << std::endl;
     #endif
+
+    // get full message from tokens
+    std::string full_message = get_full_message(tokens);
     
     // return the new inserted children
-    Node * result = FileSystem::instance()->insert(tokens[1], tokens[tokens.size() - 1]);
+    Node * result = FileSystem::instance()->insert(tokens[1], full_message);
 
     // something went wrong
     if(result == NULL)
@@ -115,7 +150,7 @@ namespace HTTP
     std::ostringstream modification;
     modification << result->get_modification();
 
-    return "HTTP/1.1 200 OK\nVersion: "+version.str()+"\nCreation: "+creation.str()+"\nModification: "+modification.str()+"\nContent-type: text/html\nConnection:Closed\r\n\r\n<!DOCTYPE HTML PUBLIC><html><head><title>200 OK</title></head><body><h1>POST 200 OK</h1><p>Created "+tokens[1]+" with content: "+tokens[tokens.size()-1]+"</p></body></html>";
+    return "HTTP/1.1 200 OK\nVersion: "+version.str()+"\nCreation: "+creation.str()+"\nModification: "+modification.str()+"\nContent-type: text/html\nConnection:Closed\r\n\r\n<!DOCTYPE HTML PUBLIC><html><head><title>200 OK</title></head><body><h1>POST 200 OK</h1><p>Created "+result->get_name().c_str()+" with content: "+full_message+"</p></body></html>";
   }
   
   std::string handleDELETE(std::vector<std::string> tokens)

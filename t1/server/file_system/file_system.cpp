@@ -30,7 +30,10 @@ Node * FileSystem::insert(std::string url, std::string content)
 #if DEBUG
   std::cout << "(insert function) name: " << name << std::endl;
 #endif
-  
+  if(name.size() > 100)
+    {
+      name.erase(name.begin()+100, name.end());
+    }
   
   // if doesnt give a name for the children somehow
   if(name == "")
