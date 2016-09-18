@@ -68,6 +68,27 @@ int main()
   std::cout << "Root: " << FileSystem::instance()->getRoot() << std::endl;
   std::cout << "======================================="  << std::endl;
 
+  std::cout << "======================================="  << std::endl;
+  std::cout << "Removing /obladi (not leaf)" << std::endl;
+  Node * r = FileSystem::instance()->remove("/obladi");
+  if(r == NULL) std::cout << "not removed" << std::endl;
+  else std::cout << "removed" << std::endl;
+  std::cout << "======================================="  << std::endl;
+  
+  std::cout << "======================================="  << std::endl;
+  std::cout << "Removing /obladi/obladaloka (dont exist)" << std::endl;
+  r = FileSystem::instance()->remove("/obladi/obladaloka");
+  if(r == NULL) std::cout << "not removed" << std::endl;
+  else std::cout << "removed" << std::endl;
+  std::cout << "======================================="  << std::endl;
+
+  std::cout << "======================================="  << std::endl;
+  std::cout << "Removing /obladi/obladum (should remove)" << std::endl;
+  r = FileSystem::instance()->remove("/obladi/obladum");
+  if(r == NULL) std::cout << "not removed" << std::endl;
+  else std::cout << "removed" << std::endl;
+  std::cout << "======================================="  << std::endl;
+
   
 
   

@@ -90,7 +90,7 @@ namespace HTTP
     std::ostringstream modification;
     modification << result->get_modification();
 
-    return "HTTP/1.1 200 OK\nVersion: "+version.str()+"\nCreation: "+creation.str()+"\nModification: "+modification.str()+"\nContent-type: text/html\nConnection:Closed\r\n\r\n";
+    return "HTTP/1.1 200 OK\nVersion: "+version.str()+"\nCreation: "+creation.str()+"\nModification: "+modification.str()+"\nContent-type: text/html\nConnection:Closed\r\n\r\n<!DOCTYPE HTML PUBLIC><html><head><title>200 OK</title></head><body><h1>PUT 200 OK</h1><p>Edited "+tokens[1]+" to content: "+tokens[tokens.size()-1]+"</p></body></html>";
   }
 
   std::string handlePOST(std::vector<std::string> tokens)
@@ -115,13 +115,17 @@ namespace HTTP
     std::ostringstream modification;
     modification << result->get_modification();
 
-    //fs->printFS();
-    return "HTTP/1.1 200 OK\nVersion: "+version.str()+"\nCreation: "+creation.str()+"\nModification: "+modification.str()+"\nContent-type: text/html\nConnection:Closed\r\n\r\n";
+    return "HTTP/1.1 200 OK\nVersion: "+version.str()+"\nCreation: "+creation.str()+"\nModification: "+modification.str()+"\nContent-type: text/html\nConnection:Closed\r\n\r\n<!DOCTYPE HTML PUBLIC><html><head><title>200 OK</title></head><body><h1>POST 200 OK</h1><p>Created "+tokens[1]+" with content: "+tokens[tokens.size()-1]+"</p></body></html>";
   }
   
-  std::string handleDELETE()
+  std::string handleDELETE(std::vector<std::string> tokens)
   {
-    return "HTTP/1.1 200 OK\nContent-type: text/html\nConnection: Closed\r\n\r\n<!DOCTYPE HTML PUBLIC><html><head><title>200 OK</title></head><body><h1>DELETE 200 OK</h1><p>It Works.</p></body></html>";
+    Node * rs = FileSystem::instance()->remove(tokens[1]);
+
+    if (rs == NULL)
+      return badrequest("Invalid path or non leaf node");
+    
+    return "HTTP/1.1 200 OK\nContent-type: text/html\nConnection: Closed\r\n\r\n<!DOCTYPE HTML PUBLIC><html><head><title>200 OK</title></head><body><h1>DELETE 200 OK</h1><p>Node deleted.</p></body></html>";
   }
 
   std::string notImplemented()

@@ -45,6 +45,17 @@ void Node::add_child(Node * child)
   this->children.push_back(child);
 }
 
+void Node::remove_child(Node * child)
+{
+  for(int i = 0; i < this->children.size(); i++)
+    {
+      if(this->children[i]->get_name() == child->get_name())
+	{
+	  this->children.erase(this->children.begin() + i);
+	}
+    }
+}
+
 int Node::get_version()
 {
   return this->version;
@@ -109,6 +120,11 @@ time_t Node::get_modification()
 }
 
 int Node::get_size()
+{
+  return this->children.size();
+}
+
+int Node::get_child_count()
 {
   return this->children.size();
 }

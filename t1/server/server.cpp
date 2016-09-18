@@ -223,7 +223,7 @@ int main(int argc, char * argv[])
 	    }
 	  else if (tokens[0] == "DELETE")
 	    {
-	      msg = HTTP::handleDELETE();
+	      msg = HTTP::handleDELETE(tokens);
 	    }
 	  else
 	    {

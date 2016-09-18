@@ -27,10 +27,12 @@ public:
   void set_data(std::string data);
   void modify();
   void add_child(Node * child);
+  void remove_child(Node * child);
   std::string get_name();
   std::string get_data();
   int get_version();
   int get_size();
+  int get_child_count();
   time_t get_creation();
   time_t get_modification();
   Node * get_child(int pos);

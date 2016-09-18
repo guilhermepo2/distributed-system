@@ -82,8 +82,28 @@ Node * FileSystem::insert(std::string url, std::string content)
   
   Node * FileSystem::remove(std::string url)
   {
-  
-    return NULL;
+    Node * removed = this->search(url);
+
+    if(removed == NULL)
+      return NULL;
+    
+    if(removed->get_child_count() > 0)
+      return NULL;
+
+    Node * parent = this->searchParent(url);
+
+    // root node
+    if(parent == NULL)
+      {
+	this->root = NULL;
+	delete removed;
+	return removed;
+      }
+
+    // not root node
+    parent->remove_child(removed);
+    delete removed;
+    return removed;
   }
 
 Node * FileSystem::edit(std::string url, std::string content)
