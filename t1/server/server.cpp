@@ -97,7 +97,7 @@ int main(int argc, char * argv[])
 	  std::cout << "successful call: socket() - got the socket descriptor" << std::endl;
 	}
 
-      // making sure there are not sockets leftovers on ports
+      // making sure there are no sockets leftovers on ports
       if(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes,
 		    sizeof(int)) == -1)
 	{
@@ -150,7 +150,7 @@ int main(int argc, char * argv[])
   sa.sa_flags = SA_RESTART;
   if(sigaction(SIGCHLD, &sa, NULL) == -1)
     {
-      perror("siaction");
+      perror("sigaction");
       exit(1);
     }
   else
