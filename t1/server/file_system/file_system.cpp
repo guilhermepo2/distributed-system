@@ -30,6 +30,7 @@ Node * FileSystem::insert(std::string url, std::string content)
 #if DEBUG
   std::cout << "(insert function) name: " << name << std::endl;
 #endif
+  
   if(name.size() > 100)
     {
       name.erase(name.begin()+100, name.end());
@@ -73,6 +74,16 @@ Node * FileSystem::insert(std::string url, std::string content)
   #if DEBUG
   std::cout << "parent: " << parent << std::endl;
   #endif
+
+  // EVERYTHING OK, but... DOESN IT ALREADY EXIST?
+  for(int i = 0; i < parent->get_child_count(); i++)
+    {
+      if(parent->get_child(i)->get_name() == child->get_name())
+	{
+	  // name already inserted, wont insert
+	  return NULL;
+	}
+    }
   
   parent->add_child(child);
 
