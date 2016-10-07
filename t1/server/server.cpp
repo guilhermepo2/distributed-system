@@ -17,6 +17,10 @@
 #include <signal.h>
 
 #include "http/http.hpp"
+#include "concurrency/concurrency.hpp"
+#include <thread>
+#include <chrono>
+#include <time.h>
 
 #define BACKLOG 10 // maximum pending connections
 
@@ -26,6 +30,8 @@ void sigchld_handler(int s)
 {
 	while(waitpid(-1, NULL, WNOHANG) > 0);
 }
+
+void proccess_requisition(int socket);
 
 // function get in addr
 // in stands for INPUT i guess...
@@ -183,6 +189,9 @@ int main(int argc, char * argv[])
 		s, sizeof s);
       std::cout << "SERVER: got connection from: " << s << std::endl;
 
+      proccess_requisition(new_fd);
+      /*
+
       //if(!fork())
       //{ // the child process will handle the connection
 	  // NOW WE HANDLE EVERYTHING
@@ -240,10 +249,84 @@ int main(int argc, char * argv[])
 	      std::cout << "=======================================" << std::endl;
 	    }
 	  //} // end of child process
+	  */
 
       close(new_fd); // the parent doesn't need the connection, it will just keep listening
     }
 
   return 0;
+}
+
+
+void proccess_requisition(int socket)
+{
+  // We get the requisition.
+  char buffer[1024];
+  int numbytes;
+  if ((numbytes = recv(socket, buffer, 1023, 0)) == -1) {
+    perror("recv");
+    exit(1);
+  }
+  buffer[numbytes] = '\0';
+  std::cout << "=======================================" << std::endl;
+  std::cout << "SERVER: New Requisition" << std::endl;
+  std::cout << buffer << std::endl;
+  std::cout << "=======================================" << std::endl;
+  
+  std::vector<std::string> tokens = Tokenizer::split(buffer);
+  std::string msg;
+
+  operation to_perform;
+  to_perform.verb = tokens[0];
+  to_perform.path_to_file = tokens[1];
+
+  // here i check if i can perform
+  // if I can I do all of this stuff and say that I performed it
+  // if I can't, just sleep and try again
+
+  if(check(to_perform))
+    {
+  
+      if(tokens[0] == "GET")
+	{
+	  msg = HTTP::handleGET(tokens);
+	}
+      else if (tokens[0] == "HEAD")
+	{
+	  msg = HTTP::handleHEAD(tokens);
+	}
+      else if (tokens[0] == "POST")
+	{
+	  msg = HTTP::handlePOST(tokens);
+	}
+      else if (tokens[0] == "PUT")
+	{
+	  msg = HTTP::handlePUT(tokens);
+	}
+      else if (tokens[0] == "DELETE")
+	{
+	  msg = HTTP::handleDELETE(tokens);
+	}
+      else
+	{
+	  msg = HTTP::notImplemented();
+	}
+      
+      if(send(socket, msg.c_str(), msg.size(), 0) == -1)
+	perror("send");
+      else
+	{
+	  std::cout << "=======================================" << std::endl;
+	  //std::cout << "SERVER: Response Sent!\n" << msg << std::endl;
+	  std::cout << "SERVER: Response Sent!\n" << std::endl;
+	  std::cout << "=======================================" << std::endl;
+	}
+
+      performed(to_perform);
+    }
+  else
+    {
+      std::this_thread::sleep_for(std::chrono::milliseconds(100 + (rand() % 100)));
+    }
 }
 
