@@ -23,6 +23,15 @@
 #include <time.h>
 
 #define BACKLOG 10 // maximum pending connections
+#define MAX_THREADS 10
+
+// for threads
+std::thread * threads;
+bool * threads_ok;
+// vector to see if threads are busy
+// true -> busy thread
+// false -> not busy thread
+
 
 // sigchld thing handler
 // also i dont know what this is tbh lads
@@ -46,6 +55,47 @@ void * get_in_addr(struct sockaddr * sa)
   return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
+struct threadInfo
+{
+  int socket;
+  int position;
+};
+typedef struct threadInfo thread_info;
+
+thread_info infos[MAX_THREADS];
+
+bool isThreadFree(int pos)
+{
+  if(pos < 0 || pos >= MAX_THREADS)
+    return false;
+
+  if(threads_ok[pos] == true)
+    return false;
+  else return true;
+}
+
+int getFreeThread()
+{
+  for(int i = 0; i < MAX_THREADS; i++)
+    {
+      if(threads_ok[i] == false)
+	{
+	  threads_ok[i] = true;
+	  return i;
+	}
+    }
+
+  return -1;
+}
+
+void setFreeThread(int pos)
+{
+  if(pos < 0 || pos >= MAX_THREADS)
+    return;
+
+  threads_ok[pos] = false;
+}
+
 int main(int argc, char * argv[])
 {
   // GETTING PORT VIA COMMAND LINE
@@ -60,6 +110,10 @@ int main(int argc, char * argv[])
       port = argv[1];
       std::cout << "Will listen on port: " << port << std::endl;
     }
+
+  // setting up for threads thing
+  threads = new std::thread[MAX_THREADS];
+  threads_ok = new bool[MAX_THREADS];
 
   // STUFF WE NEED FOR THE CONNECTION
   int sockfd, new_fd;                // listen on sock_fd, new connections on new_fd
@@ -189,7 +243,32 @@ int main(int argc, char * argv[])
 		s, sizeof s);
       std::cout << "SERVER: got connection from: " << s << std::endl;
 
-      proccess_requisition(new_fd);
+
+      // check if there free spots on thread
+      // if there isn't just say: sorry, we're busy.
+
+      int a_thread = getFreeThread();
+      
+      if(a_thread != -1)
+	{
+	  thread_info info;
+	  info.socket = new_fd;
+	  info.position = a_thread;
+	  infos[a_thread] = info;
+	  threads[a_thread] = std::thread(proccess_requisition, a_thread);
+	}
+      else
+	{
+	  std::string busy = "sorry, we're busy...";
+	  if(send(new_fd, busy.c_str(), busy.size(), 0) == -1)
+	    perror("send");
+	  else
+	    {
+	      std::cout << "=======================================" << std::endl;
+	      std::cout << "SERVER: Response Sent! We're Busy\n" << std::endl;
+	      std::cout << "=======================================" << std::endl;
+	    }
+	}
       /*
 
       //if(!fork())
@@ -251,15 +330,18 @@ int main(int argc, char * argv[])
 	  //} // end of child process
 	  */
 
-      close(new_fd); // the parent doesn't need the connection, it will just keep listening
+      //close(new_fd); // the parent doesn't need the connection, it will just keep listening
     }
 
   return 0;
 }
 
 
-void proccess_requisition(int socket)
+void proccess_requisition(int info_pos)
 {
+  int socket = infos[info_pos].socket;
+  int thread_pos = infos[info_pos].position;
+  
   // We get the requisition.
   char buffer[1024];
   int numbytes;
@@ -280,53 +362,56 @@ void proccess_requisition(int socket)
   to_perform.verb = tokens[0];
   to_perform.path_to_file = tokens[1];
 
-  // here i check if i can perform
-  // if I can I do all of this stuff and say that I performed it
-  // if I can't, just sleep and try again
-
-  if(check(to_perform))
+  while(true)
     {
-  
-      if(tokens[0] == "GET")
+      if(check(to_perform))
 	{
-	  msg = HTTP::handleGET(tokens);
-	}
-      else if (tokens[0] == "HEAD")
-	{
-	  msg = HTTP::handleHEAD(tokens);
-	}
-      else if (tokens[0] == "POST")
-	{
-	  msg = HTTP::handlePOST(tokens);
-	}
-      else if (tokens[0] == "PUT")
-	{
-	  msg = HTTP::handlePUT(tokens);
-	}
-      else if (tokens[0] == "DELETE")
-	{
-	  msg = HTTP::handleDELETE(tokens);
+	  
+	  if(tokens[0] == "GET")
+	    {
+	      msg = HTTP::handleGET(tokens);
+	    }
+	  else if (tokens[0] == "HEAD")
+	    {
+	      msg = HTTP::handleHEAD(tokens);
+	    }
+	  else if (tokens[0] == "POST")
+	    {
+	      msg = HTTP::handlePOST(tokens);
+	    }
+	  else if (tokens[0] == "PUT")
+	    {
+	      msg = HTTP::handlePUT(tokens);
+	    }
+	  else if (tokens[0] == "DELETE")
+	    {
+	      msg = HTTP::handleDELETE(tokens);
+	    }
+	  else
+	    {
+	      msg = HTTP::notImplemented();
+	    }
+	  
+	  if(send(socket, msg.c_str(), msg.size(), 0) == -1)
+	    perror("send");
+	  else
+	    {
+	      std::cout << "=======================================" << std::endl;
+	      //std::cout << "SERVER: Response Sent!\n" << msg << std::endl;
+	      std::cout << "SERVER: Response Sent!\n" << std::endl;
+	      std::cout << "=======================================" << std::endl;
+	    }
+
+	  close(socket);
+	  threads[info_pos].join();
+	  performed(to_perform);
+	  setFreeThread(thread_pos);
+	  break;
 	}
       else
 	{
-	  msg = HTTP::notImplemented();
+	  std::this_thread::sleep_for(std::chrono::milliseconds(100 + (rand() % 100)));
 	}
-      
-      if(send(socket, msg.c_str(), msg.size(), 0) == -1)
-	perror("send");
-      else
-	{
-	  std::cout << "=======================================" << std::endl;
-	  //std::cout << "SERVER: Response Sent!\n" << msg << std::endl;
-	  std::cout << "SERVER: Response Sent!\n" << std::endl;
-	  std::cout << "=======================================" << std::endl;
-	}
-
-      performed(to_perform);
-    }
-  else
-    {
-      std::this_thread::sleep_for(std::chrono::milliseconds(100 + (rand() % 100)));
     }
 }
 
