@@ -26,8 +26,8 @@
 #define MAX_THREADS 10
 
 // for threads
-std::thread * threads;
-bool * threads_ok;
+std::thread threads[MAX_THREADS];
+bool threads_ok[MAX_THREADS];
 // vector to see if threads are busy
 // true -> busy thread
 // false -> not busy thread
@@ -110,10 +110,6 @@ int main(int argc, char * argv[])
       port = argv[1];
       std::cout << "Will listen on port: " << port << std::endl;
     }
-
-  // setting up for threads thing
-  threads = new std::thread[MAX_THREADS];
-  threads_ok = new bool[MAX_THREADS];
 
   // STUFF WE NEED FOR THE CONNECTION
   int sockfd, new_fd;                // listen on sock_fd, new connections on new_fd
@@ -248,7 +244,6 @@ int main(int argc, char * argv[])
       // if there isn't just say: sorry, we're busy.
 
       int a_thread = getFreeThread();
-      
       if(a_thread != -1)
 	{
 	  thread_info info;
@@ -269,6 +264,8 @@ int main(int argc, char * argv[])
 	      std::cout << "=======================================" << std::endl;
 	    }
 	}
+
+      threads[a_thread].join();
       /*
 
       //if(!fork())
@@ -341,6 +338,9 @@ void proccess_requisition(int info_pos)
 {
   int socket = infos[info_pos].socket;
   int thread_pos = infos[info_pos].position;
+
+  std::cout << "socket: " << socket << std::endl;
+  std::cout << "position: " << thread_pos << std::endl;
   
   // We get the requisition.
   char buffer[1024];
@@ -403,7 +403,6 @@ void proccess_requisition(int info_pos)
 	    }
 
 	  close(socket);
-	  threads[info_pos].join();
 	  performed(to_perform);
 	  setFreeThread(thread_pos);
 	  break;
