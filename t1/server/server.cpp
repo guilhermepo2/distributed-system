@@ -74,17 +74,24 @@ bool isThreadFree(int pos)
   else return true;
 }
 
+int le_ebin_circle_thread = 0;
+
 int getFreeThread()
 {
-  for(int i = 0; i < MAX_THREADS; i++)
+  if(le_ebin_circle_thread >= MAX_THREADS)
+    le_ebin_circle_thread = 0;
+  
+  for(int i = le_ebin_circle_thread; i < MAX_THREADS; i++)
     {
       if(threads_ok[i] == false)
 	{
 	  threads_ok[i] = true;
+	  le_ebin_circle_thread++;
 	  return i;
 	}
     }
 
+  
   return -1;
 }
 
@@ -250,7 +257,10 @@ int main(int argc, char * argv[])
 	  info.socket = new_fd;
 	  info.position = a_thread;
 	  infos[a_thread] = info;
+	  
 	  threads[a_thread] = std::thread(proccess_requisition, a_thread);
+	  threads[a_thread].detach();
+	  //std::async(proccess_requisition, a_thread);
 	}
       else
 	{
@@ -265,7 +275,7 @@ int main(int argc, char * argv[])
 	    }
 	}
 
-      threads[a_thread].join();
+      //threads[a_thread].join();
       /*
 
       //if(!fork())
@@ -409,6 +419,7 @@ void proccess_requisition(int info_pos)
 	}
       else
 	{
+	  std::cout << "Sleeping..." << std::endl;
 	  std::this_thread::sleep_for(std::chrono::milliseconds(100 + (rand() % 100)));
 	}
     }
