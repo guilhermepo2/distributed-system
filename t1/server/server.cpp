@@ -260,7 +260,6 @@ int main(int argc, char * argv[])
 	  
 	  threads[a_thread] = std::thread(proccess_requisition, a_thread);
 	  threads[a_thread].detach();
-	  //std::async(proccess_requisition, a_thread);
 	}
       else
 	{
