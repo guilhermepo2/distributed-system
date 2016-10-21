@@ -7,7 +7,7 @@ curl --request POST \
        	        --data 'açsldkfajsçdlfkajsd\nasldfkjasçdlfjkasdfkajsçdfkja\nlasdjfaçsldkfajçsdfk\nlaskdjfçasdkfjaçsdlkfajsçdlf\nalsdfjkaçsdfkajsdf\nasdf'
 
 
-for((x=0; x < 5000; x++));
+for((x=0; x < 100; x++));
 do
    r=$RANDOM
    r=$(( r %= 200 ))
