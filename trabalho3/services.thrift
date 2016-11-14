@@ -1,12 +1,12 @@
 namespace py simpledb
 
 typedef byte version_t
-typedef i64 time_t
+typedef i64 time_t_def
 
 struct File {
   // meta dados
-  1: time_t creation,
-  2: time_t modification,
+  1: time_t_def creation,
+  2: time_t_def modification,
   3: version_t version,
 
   // conteudo do arquivo
@@ -21,7 +21,7 @@ service SimpleDB
   list<File> get_list(1: string url)
   version_t add(1: string url, 2: string content),
   version_t update(1: string url, 2: string content),
-  File delete(1: string url),
+  File delete_file(1: string url),
   version_t update_with_version(1: string url, 2: string content, 3: version_t version),
   File delete_with_version(1: string url, 2: version_t version)
 }
