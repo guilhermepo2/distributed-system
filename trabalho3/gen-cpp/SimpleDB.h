@@ -28,6 +28,7 @@ class SimpleDBIf {
   virtual void delete_file(File& _return, const std::string& url) = 0;
   virtual version_t update_with_version(const std::string& url, const std::string& content, const version_t version) = 0;
   virtual void delete_with_version(File& _return, const std::string& url, const version_t version) = 0;
+  virtual void update_server() = 0;
 };
 
 class SimpleDBIfFactory {
@@ -79,6 +80,9 @@ class SimpleDBNull : virtual public SimpleDBIf {
     return _return;
   }
   void delete_with_version(File& /* _return */, const std::string& /* url */, const version_t /* version */) {
+    return;
+  }
+  void update_server() {
     return;
   }
 };
@@ -846,6 +850,80 @@ class SimpleDB_delete_with_version_presult {
 
 };
 
+
+class SimpleDB_update_server_args {
+ public:
+
+  SimpleDB_update_server_args(const SimpleDB_update_server_args&);
+  SimpleDB_update_server_args& operator=(const SimpleDB_update_server_args&);
+  SimpleDB_update_server_args() {
+  }
+
+  virtual ~SimpleDB_update_server_args() throw();
+
+  bool operator == (const SimpleDB_update_server_args & /* rhs */) const
+  {
+    return true;
+  }
+  bool operator != (const SimpleDB_update_server_args &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const SimpleDB_update_server_args & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class SimpleDB_update_server_pargs {
+ public:
+
+
+  virtual ~SimpleDB_update_server_pargs() throw();
+
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class SimpleDB_update_server_result {
+ public:
+
+  SimpleDB_update_server_result(const SimpleDB_update_server_result&);
+  SimpleDB_update_server_result& operator=(const SimpleDB_update_server_result&);
+  SimpleDB_update_server_result() {
+  }
+
+  virtual ~SimpleDB_update_server_result() throw();
+
+  bool operator == (const SimpleDB_update_server_result & /* rhs */) const
+  {
+    return true;
+  }
+  bool operator != (const SimpleDB_update_server_result &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const SimpleDB_update_server_result & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class SimpleDB_update_server_presult {
+ public:
+
+
+  virtual ~SimpleDB_update_server_presult() throw();
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+
+};
+
 class SimpleDBClient : virtual public SimpleDBIf {
  public:
   SimpleDBClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
@@ -892,6 +970,9 @@ class SimpleDBClient : virtual public SimpleDBIf {
   void delete_with_version(File& _return, const std::string& url, const version_t version);
   void send_delete_with_version(const std::string& url, const version_t version);
   void recv_delete_with_version(File& _return);
+  void update_server();
+  void send_update_server();
+  void recv_update_server();
  protected:
   boost::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
   boost::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
@@ -914,6 +995,7 @@ class SimpleDBProcessor : public ::apache::thrift::TDispatchProcessor {
   void process_delete_file(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_update_with_version(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_delete_with_version(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
+  void process_update_server(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
  public:
   SimpleDBProcessor(boost::shared_ptr<SimpleDBIf> iface) :
     iface_(iface) {
@@ -924,6 +1006,7 @@ class SimpleDBProcessor : public ::apache::thrift::TDispatchProcessor {
     processMap_["delete_file"] = &SimpleDBProcessor::process_delete_file;
     processMap_["update_with_version"] = &SimpleDBProcessor::process_update_with_version;
     processMap_["delete_with_version"] = &SimpleDBProcessor::process_delete_with_version;
+    processMap_["update_server"] = &SimpleDBProcessor::process_update_server;
   }
 
   virtual ~SimpleDBProcessor() {}
@@ -1019,6 +1102,15 @@ class SimpleDBMultiface : virtual public SimpleDBIf {
     return;
   }
 
+  void update_server() {
+    size_t sz = ifaces_.size();
+    size_t i = 0;
+    for (; i < (sz - 1); ++i) {
+      ifaces_[i]->update_server();
+    }
+    ifaces_[i]->update_server();
+  }
+
 };
 
 // The 'concurrent' client is a thread safe client that correctly handles
@@ -1070,6 +1162,9 @@ class SimpleDBConcurrentClient : virtual public SimpleDBIf {
   void delete_with_version(File& _return, const std::string& url, const version_t version);
   int32_t send_delete_with_version(const std::string& url, const version_t version);
   void recv_delete_with_version(File& _return, const int32_t seqid);
+  void update_server();
+  int32_t send_update_server();
+  void recv_update_server(const int32_t seqid);
  protected:
   boost::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
   boost::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;

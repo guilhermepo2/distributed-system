@@ -24,4 +24,8 @@ service SimpleDB
   File delete_file(1: string url),
   version_t update_with_version(1: string url, 2: string content, 3: version_t version),
   File delete_with_version(1: string url, 2: version_t version)
+
+
+  // referente a comunicacao entre servidores
+  void update_server()
 }

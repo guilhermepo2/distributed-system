@@ -55,6 +55,11 @@ class SimpleDBHandler : virtual public SimpleDBIf {
     printf("delete_with_version\n");
   }
 
+  void update_server() {
+    // Your implementation goes here
+    printf("update_server\n");
+  }
+
 };
 
 int main(int argc, char **argv) {
