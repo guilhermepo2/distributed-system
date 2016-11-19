@@ -12,13 +12,13 @@ simpledb:
 	g++ -Wall -std=c++11 -I/usr/local/include -c services_types.cpp -o types.o
 
 linkdb:
-	g++ -Wall -std=c++11 -L/usr/local/lib common/tokenizer.o file_system/node.o file_system/file_system.o http/http.o simpledb.o simpledb_server.o constants.o types.o -o MEUBELOSERVER -lthrift
+	g++ -Wall -std=c++11 -L/usr/local/lib common/tokenizer.o file_system/node.o file_system/file_system.o http/http.o simpledb.o simpledb_server.o constants.o types.o -o myserver -lthrift
 
 client:
 	g++ -Wall -std=c++11 -I/usr/local/include/thrift -I/usr/local/include -c myclient.cpp -o client.o
 
 linkclient:
-	g++ -Wall -std=c++11 -L/usr/local/lib client.o simpledb.o constants.o types.o -o MEUBELOCLIENT -lthrift
+	g++ -Wall -std=c++11 -L/usr/local/lib client.o simpledb.o constants.o types.o -o myclient -lthrift
 
 all:
 	make simpledb;

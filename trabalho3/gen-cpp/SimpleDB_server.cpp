@@ -5,13 +5,16 @@
 #include "SimpleDB.h"
 #include "file_system/file_system.hpp"
 #include "http/http.hpp"
-#include <thrift/transport/TSocket.h>
+
 #include <thrift/protocol/TBinaryProtocol.h>
 #include <thrift/server/TSimpleServer.h>
 #include <thrift/transport/TServerSocket.h>
-#include <thrift/transport/TBufferTransports.h>
+#include <thrift/transport/TSocket.h>
+#include <thrift/transport/TTransportUtils.h>
+
 #include <vector>
 #include <fstream>
+#include <thread>
 
 using namespace ::apache::thrift;
 using namespace ::apache::thrift::protocol;
@@ -60,7 +63,7 @@ private:
 	    transport->close();
 	  }
 	std::cout << "Done! :D" << std::endl;
-	
+
 	// avisar aos outros servidores que mais um foi conectado
 	// pra isso tem que criar mais um servico no thrift de atualizar de acordo
 	// com o arquivo de controle
@@ -81,93 +84,251 @@ private:
     #endif
   }
 
+  int apply_hash(const char * s, int size, int count)
+  {
+    int hash = 0;
+    for(int i = 0; i < size; i++)
+      {
+	hash += (int)s[i];
+      }
+
+#if DEBUG
+    std::cout << "Applying Hash" << std::endl;
+    std::cout << "Value before Hash: " << hash << std::endl;
+#endif
+
+    hash = hash % count;
+
+#if DEBUG
+    std::cout << "Value after hash: " << hash << std::endl;
+#endif
+
+    return hash;
+  }
+
   void get(File& _return, const std::string& url) {
 
-    Node * result = FileSystem::instance()->search(url);
-    _return.creation = result->get_creation();
-    _return.modification = result->get_modification();
-    _return.version = result->get_version();
-    _return.name = result->get_name();
-    _return.content = result->get_data();
+    int hash = apply_hash(url.c_str(), url.size(), this->ports.size());
+
+    if(this->ports[hash] == this->myPort)
+      {
+	std::cout << "It's my work!" << std::endl;
+
+	Node * result = FileSystem::instance()->search(url);
+	_return.creation = result->get_creation();
+	_return.modification = result->get_modification();
+	_return.version = result->get_version();
+	_return.name = result->get_name();
+	_return.content = result->get_data();
+      }
+    else
+      {
+	std::cout << "This is not my work!" << std::endl;
+	std::cout << "This is " << this->ports[hash] << " job!" << std::endl;
+	shared_ptr<TTransport> socket(new TSocket("localhost", this->ports[hash]));
+	shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+	shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+	SimpleDBClient client(protocol);
+	transport->open();
+	client.get(_return, url);
+	transport->close();
+      }
 
     printf("get\n");
   }
 
   void get_list(std::vector<File> & _return, const std::string& url) {
-    Node * result = FileSystem::instance()->search(url);
-    Node * aux;
-    std::vector<File*> files;
-    for(int i = 0; i < result->get_child_count(); i++)
-    {
-      aux = result->get_child(i);
-      files.push_back(new File());
-      files[i]->creation = aux->get_creation();
-      files[i]->modification = aux->get_modification();
-      files[i]->version = aux->get_version();
-      files[i]->name = aux->get_name();
-      files[i]->content = aux->get_data();
 
-      _return.push_back(*(files[i]));
-    }
+    int hash = apply_hash(url.c_str(), url.size(), this->ports.size());
+
+    if(this->ports[hash] == this->myPort)
+      {
+	std::cout << "It's my work!" << std::endl;
+	Node * result = FileSystem::instance()->search(url);
+	Node * aux;
+	std::vector<File*> files;
+	for(int i = 0; i < result->get_child_count(); i++)
+	  {
+	    aux = result->get_child(i);
+	    files.push_back(new File());
+	    files[i]->creation = aux->get_creation();
+	    files[i]->modification = aux->get_modification();
+	    files[i]->version = aux->get_version();
+	    files[i]->name = aux->get_name();
+	    files[i]->content = aux->get_data();
+	    
+	    _return.push_back(*(files[i]));
+	  }
+      }
+    else
+      {
+	std::cout << "This is not my work!" << std::endl;
+	std::cout << "This is " << this->ports[hash] << " job!" << std::endl;
+	shared_ptr<TTransport> socket(new TSocket("localhost", this->ports[hash]));
+	shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+	shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+	SimpleDBClient client(protocol);
+	transport->open();
+	client.get_list(_return, url);
+	transport->close();
+      }
 
     printf("get_list\n");
   }
 
   version_t add(const std::string& url, const std::string& content) {
-    // Your implementation goes here
-    std::cout << "url:" << url << std::endl;
-    Node * result = FileSystem::instance()->insert(url, content);
-    printf("add\n");
-    return result->get_version();
+
+    int hash = apply_hash(url.c_str(), url.size(), this->ports.size());
+
+    if(this->ports[hash] == this->myPort)
+      {
+	std::cout << "It's my work!" << std::endl;
+	std::cout << "url:" << url << std::endl;
+	Node * result = FileSystem::instance()->insert(url, content);
+	printf("add\n");
+	return result->get_version();
+      }
+    else
+      {
+	int v;
+	std::cout << "This is not my work!" << std::endl;
+	std::cout << "This is " << this->ports[hash] << " job!" << std::endl;
+	shared_ptr<TTransport> socket(new TSocket("localhost", this->ports[hash]));
+	shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+	shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+	SimpleDBClient client(protocol);
+	transport->open();
+	v = client.add(url, content);
+	transport->close();
+
+	return v;
+      }
   }
 
   version_t update(const std::string& url, const std::string& content) {
-    Node * result = FileSystem::instance()->edit(url, content);
-    printf("update\n");
-    return result->get_version();
+
+    int hash = apply_hash(url.c_str(), url.size(), this->ports.size());
+
+    if(this->ports[hash] == this->myPort)
+      {
+	Node * result = FileSystem::instance()->edit(url, content);
+	printf("update\n");
+	return result->get_version();
+      }
+    else
+      {
+	int v;
+	std::cout << "This is not my work!" << std::endl;
+	std::cout << "This is " << this->ports[hash] << " job!" << std::endl;
+	shared_ptr<TTransport> socket(new TSocket("localhost", this->ports[hash]));
+	shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+	shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+	SimpleDBClient client(protocol);
+	transport->open();
+	v = client.update(url, content);
+	transport->close();
+	return v;
+      }
   }
 
   void delete_file(File& _return, const std::string& url) {
-    Node * result = FileSystem::instance()->remove(url);
 
-    _return.creation = result->get_creation();
-    _return.modification = result->get_modification();
-    _return.version = result->get_version();
-    _return.name = result->get_name();
-    _return.content = result->get_data();
+    int hash = apply_hash(url.c_str(), url.size(), this->ports.size());
 
+    if(this->ports[hash] == this->myPort)
+      {
+	Node * result = FileSystem::instance()->remove(url);
+	
+	_return.creation = result->get_creation();
+	_return.modification = result->get_modification();
+	_return.version = result->get_version();
+	_return.name = result->get_name();
+	_return.content = result->get_data();
+      }
+    else
+      {
+	std::cout << "This is not my work!" << std::endl;
+	std::cout << "This is " << this->ports[hash] << " job!" << std::endl;
+	shared_ptr<TTransport> socket(new TSocket("localhost", this->ports[hash]));
+	shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+	shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+	SimpleDBClient client(protocol);
+	transport->open();
+	client.delete_file(_return, url);
+	transport->close();
+      }
     printf("delete_file\n");
   }
 
   version_t update_with_version(const std::string& url, const std::string& content, const version_t version) {
-    Node * s = FileSystem::instance()->search(url);
 
-    if(s->get_version() == version)
-    {
-      Node * result = FileSystem::instance()->edit(url, content);
-      return result->get_version();
-    }
+    int hash = apply_hash(url.c_str(), url.size(), this->ports.size());
+
+
+    if(this->ports[hash] == this->myPort)
+      {
+	Node * s = FileSystem::instance()->search(url);
+	
+	if(s->get_version() == version)
+	  {
+	    Node * result = FileSystem::instance()->edit(url, content);
+	    return result->get_version();
+	  }
+	else
+	  {
+	    return -1;
+	  }
+      }
     else
-    {
-      return -1;
-    }
+      {
+	int v;
+	std::cout << "This is not my work!" << std::endl;
+	std::cout << "This is " << this->ports[hash] << " job!" << std::endl;
+	shared_ptr<TTransport> socket(new TSocket("localhost", this->ports[hash]));
+	shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+	shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+	SimpleDBClient client(protocol);
+	transport->open();
+	v = client.update_with_version(url, content, version);
+	transport->close();
+
+	return v;
+      }
 
     printf("update_with_version\n");
   }
 
   void delete_with_version(File& _return, const std::string& url, const version_t version) {
-    Node * s = FileSystem::instance()->search(url);
 
-    if(s->get_version() == version)
-    {
-      Node * result = FileSystem::instance()->remove(url);
+    int hash = apply_hash(url.c_str(), url.size(), this->ports.size());
 
-      _return.creation = result->get_creation();
-      _return.modification = result->get_modification();
-      _return.version = result->get_version();
-      _return.name = result->get_name();
-      _return.content = result->get_data();
-    }
+    if(this->ports[hash] == this->myPort)
+      {
+	Node * s = FileSystem::instance()->search(url);
+	
+	if(s->get_version() == version)
+	  {
+	    Node * result = FileSystem::instance()->remove(url);
+	    
+	    _return.creation = result->get_creation();
+	    _return.modification = result->get_modification();
+	    _return.version = result->get_version();
+	    _return.name = result->get_name();
+	    _return.content = result->get_data();
+	  }
+      }
+    else
+      {
+	std::cout << "This is not my work!" << std::endl;
+	std::cout << "This is " << this->ports[hash] << " job!" << std::endl;
+	shared_ptr<TTransport> socket(new TSocket("localhost", this->ports[hash]));
+	shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+	shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+	SimpleDBClient client(protocol);
+	transport->open();
+	client.delete_with_version(_return, url, version);
+	transport->close();
+      }
     printf("delete_with_version\n");
   }
 
@@ -198,19 +359,22 @@ private:
 
 };
 
-int main(int argc, char **argv) {
-  int port = atoi(argv[1]);
+void initialize_server(int port)
+{
   shared_ptr<SimpleDBHandler> handler(new SimpleDBHandler(port));
   shared_ptr<TProcessor> processor(new SimpleDBProcessor(handler));
   shared_ptr<TServerTransport> serverTransport(new TServerSocket(port));
   shared_ptr<TTransportFactory> transportFactory(new TBufferedTransportFactory());
   shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
-
+  
   TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
   server.serve();
+}
 
+int main(int argc, char **argv) {
 
-
+  initialize_server(atoi(argv[1]));
+  
   std::cout << "ay lmao" << std::endl;
   return 0;
 }
