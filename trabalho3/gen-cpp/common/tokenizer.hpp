@@ -14,6 +14,6 @@ namespace Tokenizer
 #ifndef DEV
 #define DEV
 
-#define DEBUG 1
+#define DEBUG 0
 
 #endif

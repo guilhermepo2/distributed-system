@@ -2,6 +2,5 @@
 #define _DEFS_HEADER_
 
 #define CONTROL_FILENAME "control.cf"
-#define SERVER_COUNT 2
 
 #endif

@@ -15,6 +15,7 @@
 #include <vector>
 #include <fstream>
 #include <thread>
+#include <chrono>
 
 using namespace ::apache::thrift;
 using namespace ::apache::thrift::protocol;
@@ -50,6 +51,7 @@ private:
 
     if(this->ports.size() > 1)
       {
+	std::cout << "MSG FROM SERVER " << this->myPort << std::endl;
 	std::cout << "There are other servers running!" << std::endl;
 	std::cout << "I Should tell them about me! :D" << std::endl;
 	for(int i = 0; i < this->ports.size() - 1 ; i++) // the last port is me!
@@ -70,10 +72,12 @@ private:
       }
     else
       {
+	std::cout << "MSG FROM SERVER " << this->myPort << std::endl;
 	std::cout << "I'm alone :(" << std::endl;
       }
 
     #if DEBUG
+    std::cout << "MSG FROM SERVER " << this->myPort << std::endl;
     std::cout << "Server Created!" << std::endl;
     std::cout << "My Port: " << port << std::endl;
     std::cout << "Ports that I know: " << std::endl;
@@ -107,11 +111,12 @@ private:
   }
 
   void get(File& _return, const std::string& url) {
-
+    std::cout << "=========================================" << std::endl;
     int hash = apply_hash(url.c_str(), url.size(), this->ports.size());
 
     if(this->ports[hash] == this->myPort)
       {
+	std::cout << "MSG FROM SERVER " << this->myPort << std::endl;
 	std::cout << "It's my work!" << std::endl;
 
 	Node * result = FileSystem::instance()->search(url);
@@ -123,6 +128,7 @@ private:
       }
     else
       {
+	std::cout << "MSG FROM SERVER " << this->myPort << std::endl;
 	std::cout << "This is not my work!" << std::endl;
 	std::cout << "This is " << this->ports[hash] << " job!" << std::endl;
 	shared_ptr<TTransport> socket(new TSocket("localhost", this->ports[hash]));
@@ -138,11 +144,12 @@ private:
   }
 
   void get_list(std::vector<File> & _return, const std::string& url) {
-
+    std::cout << "=========================================" << std::endl;
     int hash = apply_hash(url.c_str(), url.size(), this->ports.size());
 
     if(this->ports[hash] == this->myPort)
       {
+	std::cout << "MSG FROM SERVER " << this->myPort << std::endl;
 	std::cout << "It's my work!" << std::endl;
 	Node * result = FileSystem::instance()->search(url);
 	Node * aux;
@@ -162,6 +169,7 @@ private:
       }
     else
       {
+	std::cout << "MSG FROM SERVER " << this->myPort << std::endl;
 	std::cout << "This is not my work!" << std::endl;
 	std::cout << "This is " << this->ports[hash] << " job!" << std::endl;
 	shared_ptr<TTransport> socket(new TSocket("localhost", this->ports[hash]));
@@ -177,11 +185,12 @@ private:
   }
 
   version_t add(const std::string& url, const std::string& content) {
-
+    std::cout << "=========================================" << std::endl;
     int hash = apply_hash(url.c_str(), url.size(), this->ports.size());
 
     if(this->ports[hash] == this->myPort)
       {
+	std::cout << "MSG FROM SERVER " << this->myPort << std::endl;
 	std::cout << "It's my work!" << std::endl;
 	std::cout << "url:" << url << std::endl;
 	Node * result = FileSystem::instance()->insert(url, content);
@@ -190,6 +199,7 @@ private:
       }
     else
       {
+	std::cout << "MSG FROM SERVER " << this->myPort << std::endl;
 	int v;
 	std::cout << "This is not my work!" << std::endl;
 	std::cout << "This is " << this->ports[hash] << " job!" << std::endl;
@@ -203,20 +213,25 @@ private:
 
 	return v;
       }
+
+    printf("add\n");
   }
 
   version_t update(const std::string& url, const std::string& content) {
-
+    std::cout << "=========================================" << std::endl;
     int hash = apply_hash(url.c_str(), url.size(), this->ports.size());
 
     if(this->ports[hash] == this->myPort)
       {
+	std::cout << "MSG FROM SERVER " << this->myPort << std::endl;
+	std::cout << "Its my work! :D" << std::endl;
 	Node * result = FileSystem::instance()->edit(url, content);
 	printf("update\n");
 	return result->get_version();
       }
     else
       {
+	std::cout << "MSG FROM SERVER " << this->myPort << std::endl;
 	int v;
 	std::cout << "This is not my work!" << std::endl;
 	std::cout << "This is " << this->ports[hash] << " job!" << std::endl;
@@ -229,14 +244,18 @@ private:
 	transport->close();
 	return v;
       }
+
+    printf("get_list\n");
   }
 
   void delete_file(File& _return, const std::string& url) {
-
+    std::cout << "=========================================" << std::endl;
     int hash = apply_hash(url.c_str(), url.size(), this->ports.size());
 
     if(this->ports[hash] == this->myPort)
       {
+	std::cout << "MSG FROM SERVER " << this->myPort << std::endl;
+	std::cout << "Its my work! :D" << std::endl;
 	Node * result = FileSystem::instance()->remove(url);
 	
 	_return.creation = result->get_creation();
@@ -247,6 +266,7 @@ private:
       }
     else
       {
+	std::cout << "MSG FROM SERVER " << this->myPort << std::endl;
 	std::cout << "This is not my work!" << std::endl;
 	std::cout << "This is " << this->ports[hash] << " job!" << std::endl;
 	shared_ptr<TTransport> socket(new TSocket("localhost", this->ports[hash]));
@@ -261,12 +281,14 @@ private:
   }
 
   version_t update_with_version(const std::string& url, const std::string& content, const version_t version) {
-
+    std::cout << "=========================================" << std::endl;
     int hash = apply_hash(url.c_str(), url.size(), this->ports.size());
 
 
     if(this->ports[hash] == this->myPort)
       {
+	std::cout << "MSG FROM SERVER " << this->myPort << std::endl;
+	std::cout << "Its my work! :D" << std::endl;
 	Node * s = FileSystem::instance()->search(url);
 	
 	if(s->get_version() == version)
@@ -281,6 +303,7 @@ private:
       }
     else
       {
+	std::cout << "MSG FROM SERVER " << this->myPort << std::endl;
 	int v;
 	std::cout << "This is not my work!" << std::endl;
 	std::cout << "This is " << this->ports[hash] << " job!" << std::endl;
@@ -299,11 +322,13 @@ private:
   }
 
   void delete_with_version(File& _return, const std::string& url, const version_t version) {
-
+    std::cout << "=========================================" << std::endl;
     int hash = apply_hash(url.c_str(), url.size(), this->ports.size());
 
     if(this->ports[hash] == this->myPort)
       {
+	std::cout << "MSG FROM SERVER " << this->myPort << std::endl;
+	std::cout << "Its my work! :D" << std::endl;
 	Node * s = FileSystem::instance()->search(url);
 	
 	if(s->get_version() == version)
@@ -319,6 +344,7 @@ private:
       }
     else
       {
+	std::cout << "MSG FROM SERVER " << this->myPort << std::endl;
 	std::cout << "This is not my work!" << std::endl;
 	std::cout << "This is " << this->ports[hash] << " job!" << std::endl;
 	shared_ptr<TTransport> socket(new TSocket("localhost", this->ports[hash]));
@@ -334,6 +360,7 @@ private:
 
     void update_server() {
       std::cout << "=========================================" << std::endl;
+      std::cout << "MSG FROM SERVER " << this->myPort << std::endl;
       std::cout << "A new friend joined the server!" << std::endl;
       std::cout << "Let's see who it is!" << std::endl;
 
@@ -368,13 +395,25 @@ void initialize_server(int port)
   shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
   
   TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
+  
   server.serve();
 }
 
 int main(int argc, char **argv) {
 
-  initialize_server(atoi(argv[1]));
+  int thread_count = argc - 1;
+  std::thread * db_servers = new std::thread[thread_count];
+
+  int i;
+  for(i = 0; i < (thread_count - 1); i++)
+    {
+      db_servers[i] = std::thread(&initialize_server, atoi(argv[i+1]));
+      db_servers[i].detach();
+      
+      std::this_thread::sleep_for(std::chrono::seconds(1));
+      std::cout << "==================" << std::endl;
+    }
+  initialize_server(atoi(argv[i+1]));
   
-  std::cout << "ay lmao" << std::endl;
   return 0;
 }
