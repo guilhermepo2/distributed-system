@@ -166,6 +166,7 @@ Node * FileSystem::search(std::string url)
 	search_node = search_node->get_child_by_name(urlTokens[i]);
     }
 
+  std::cout << "Search Node: " << search_node << std::endl;
   return search_node;
 }
 

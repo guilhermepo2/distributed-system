@@ -28,6 +28,7 @@ class SimpleDBHandler : virtual public SimpleDBIf {
 private:
   std::vector<int> ports;
   int myPort;
+
  public:
   SimpleDBHandler(int port) {
     this->myPort = port;
@@ -111,6 +112,16 @@ private:
   }
 
   void get(File& _return, const std::string& url) {
+#if DEBUG
+    std::cout << "url: " << url << std::endl;
+    std::vector<std::string> tokens = Tokenizer::split(url.c_str(), '/');
+
+    for(int i = 0; i < tokens.size(); i++)
+      {
+	std::cout << "token " << i << ": " << tokens[i] << std::endl;
+      }
+#endif
+    
     std::cout << "=========================================" << std::endl;
     int hash = apply_hash(url.c_str(), url.size(), this->ports.size());
 
@@ -120,11 +131,15 @@ private:
 	std::cout << "It's my work!" << std::endl;
 
 	Node * result = FileSystem::instance()->search(url);
-	_return.creation = result->get_creation();
-	_return.modification = result->get_modification();
-	_return.version = result->get_version();
-	_return.name = result->get_name();
-	_return.content = result->get_data();
+
+	if(result != NULL)
+	  {
+	    _return.creation = result->get_creation();
+	    _return.modification = result->get_modification();
+	    _return.version = result->get_version();
+	    _return.name = result->get_name();
+	    _return.content = result->get_data();
+	  }
       }
     else
       {
@@ -140,6 +155,7 @@ private:
 	transport->close();
       }
 
+    std::cout << "returning: " << _return << std::endl;
     printf("get\n");
   }
 
@@ -163,7 +179,7 @@ private:
 	    files[i]->version = aux->get_version();
 	    files[i]->name = aux->get_name();
 	    files[i]->content = aux->get_data();
-	    
+
 	    _return.push_back(*(files[i]));
 	  }
       }
@@ -185,6 +201,30 @@ private:
   }
 
   version_t add(const std::string& url, const std::string& content) {
+
+    std::vector<std::string> tokens = Tokenizer::split(url.c_str(), '/');
+    if(tokens.size() > 2)
+      {
+	File f;
+	std::string url2 = "";
+	for(int i = 1; i < tokens.size() - 1; i++)
+	  {
+	    url2 += "/" + tokens[i];
+	    std::cout << url2 << std::endl;
+	    this->get(f, url2);
+	    if(f.name.size() > 0)
+	      {
+		std::cout << "nao nulo" << std::endl;
+	      }
+	    else
+	      {
+		this->add(url2, "");
+	      }
+	    
+	    std::cout << "file: " << f << std::endl;
+	  }
+      }
+    
     std::cout << "=========================================" << std::endl;
     int hash = apply_hash(url.c_str(), url.size(), this->ports.size());
 
@@ -257,7 +297,7 @@ private:
 	std::cout << "MSG FROM SERVER " << this->myPort << std::endl;
 	std::cout << "Its my work! :D" << std::endl;
 	Node * result = FileSystem::instance()->remove(url);
-	
+
 	_return.creation = result->get_creation();
 	_return.modification = result->get_modification();
 	_return.version = result->get_version();
@@ -290,7 +330,7 @@ private:
 	std::cout << "MSG FROM SERVER " << this->myPort << std::endl;
 	std::cout << "Its my work! :D" << std::endl;
 	Node * s = FileSystem::instance()->search(url);
-	
+
 	if(s->get_version() == version)
 	  {
 	    Node * result = FileSystem::instance()->edit(url, content);
@@ -330,11 +370,11 @@ private:
 	std::cout << "MSG FROM SERVER " << this->myPort << std::endl;
 	std::cout << "Its my work! :D" << std::endl;
 	Node * s = FileSystem::instance()->search(url);
-	
+
 	if(s->get_version() == version)
 	  {
 	    Node * result = FileSystem::instance()->remove(url);
-	    
+
 	    _return.creation = result->get_creation();
 	    _return.modification = result->get_modification();
 	    _return.version = result->get_version();
@@ -393,14 +433,16 @@ void initialize_server(int port)
   shared_ptr<TServerTransport> serverTransport(new TServerSocket(port));
   shared_ptr<TTransportFactory> transportFactory(new TBufferedTransportFactory());
   shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
-  
+
   TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
-  
+
   server.serve();
 }
 
 int main(int argc, char **argv) {
 
+  initialize_server(atoi(argv[1]));
+  /*
   int thread_count = argc - 1;
   std::thread * db_servers = new std::thread[thread_count];
 
@@ -409,11 +451,12 @@ int main(int argc, char **argv) {
     {
       db_servers[i] = std::thread(&initialize_server, atoi(argv[i+1]));
       db_servers[i].detach();
-      
+
       std::this_thread::sleep_for(std::chrono::seconds(1));
       std::cout << "==================" << std::endl;
     }
   initialize_server(atoi(argv[i+1]));
-  
+  */
+
   return 0;
 }
