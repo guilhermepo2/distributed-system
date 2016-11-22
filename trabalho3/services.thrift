@@ -28,4 +28,5 @@ service SimpleDB
 
   // referente a comunicacao entre servidores
   void update_server()
+  File get_v(1: string url_v, 2: string url)
 }

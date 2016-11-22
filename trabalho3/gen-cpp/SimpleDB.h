@@ -29,6 +29,7 @@ class SimpleDBIf {
   virtual version_t update_with_version(const std::string& url, const std::string& content, const version_t version) = 0;
   virtual void delete_with_version(File& _return, const std::string& url, const version_t version) = 0;
   virtual void update_server() = 0;
+  virtual void get_v(File& _return, const std::string& url_v, const std::string& url) = 0;
 };
 
 class SimpleDBIfFactory {
@@ -83,6 +84,9 @@ class SimpleDBNull : virtual public SimpleDBIf {
     return;
   }
   void update_server() {
+    return;
+  }
+  void get_v(File& /* _return */, const std::string& /* url_v */, const std::string& /* url */) {
     return;
   }
 };
@@ -924,6 +928,117 @@ class SimpleDB_update_server_presult {
 
 };
 
+typedef struct _SimpleDB_get_v_args__isset {
+  _SimpleDB_get_v_args__isset() : url_v(false), url(false) {}
+  bool url_v :1;
+  bool url :1;
+} _SimpleDB_get_v_args__isset;
+
+class SimpleDB_get_v_args {
+ public:
+
+  SimpleDB_get_v_args(const SimpleDB_get_v_args&);
+  SimpleDB_get_v_args& operator=(const SimpleDB_get_v_args&);
+  SimpleDB_get_v_args() : url_v(), url() {
+  }
+
+  virtual ~SimpleDB_get_v_args() throw();
+  std::string url_v;
+  std::string url;
+
+  _SimpleDB_get_v_args__isset __isset;
+
+  void __set_url_v(const std::string& val);
+
+  void __set_url(const std::string& val);
+
+  bool operator == (const SimpleDB_get_v_args & rhs) const
+  {
+    if (!(url_v == rhs.url_v))
+      return false;
+    if (!(url == rhs.url))
+      return false;
+    return true;
+  }
+  bool operator != (const SimpleDB_get_v_args &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const SimpleDB_get_v_args & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class SimpleDB_get_v_pargs {
+ public:
+
+
+  virtual ~SimpleDB_get_v_pargs() throw();
+  const std::string* url_v;
+  const std::string* url;
+
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _SimpleDB_get_v_result__isset {
+  _SimpleDB_get_v_result__isset() : success(false) {}
+  bool success :1;
+} _SimpleDB_get_v_result__isset;
+
+class SimpleDB_get_v_result {
+ public:
+
+  SimpleDB_get_v_result(const SimpleDB_get_v_result&);
+  SimpleDB_get_v_result& operator=(const SimpleDB_get_v_result&);
+  SimpleDB_get_v_result() {
+  }
+
+  virtual ~SimpleDB_get_v_result() throw();
+  File success;
+
+  _SimpleDB_get_v_result__isset __isset;
+
+  void __set_success(const File& val);
+
+  bool operator == (const SimpleDB_get_v_result & rhs) const
+  {
+    if (!(success == rhs.success))
+      return false;
+    return true;
+  }
+  bool operator != (const SimpleDB_get_v_result &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const SimpleDB_get_v_result & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _SimpleDB_get_v_presult__isset {
+  _SimpleDB_get_v_presult__isset() : success(false) {}
+  bool success :1;
+} _SimpleDB_get_v_presult__isset;
+
+class SimpleDB_get_v_presult {
+ public:
+
+
+  virtual ~SimpleDB_get_v_presult() throw();
+  File* success;
+
+  _SimpleDB_get_v_presult__isset __isset;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+
+};
+
 class SimpleDBClient : virtual public SimpleDBIf {
  public:
   SimpleDBClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
@@ -973,6 +1088,9 @@ class SimpleDBClient : virtual public SimpleDBIf {
   void update_server();
   void send_update_server();
   void recv_update_server();
+  void get_v(File& _return, const std::string& url_v, const std::string& url);
+  void send_get_v(const std::string& url_v, const std::string& url);
+  void recv_get_v(File& _return);
  protected:
   boost::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
   boost::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
@@ -996,6 +1114,7 @@ class SimpleDBProcessor : public ::apache::thrift::TDispatchProcessor {
   void process_update_with_version(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_delete_with_version(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_update_server(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
+  void process_get_v(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
  public:
   SimpleDBProcessor(boost::shared_ptr<SimpleDBIf> iface) :
     iface_(iface) {
@@ -1007,6 +1126,7 @@ class SimpleDBProcessor : public ::apache::thrift::TDispatchProcessor {
     processMap_["update_with_version"] = &SimpleDBProcessor::process_update_with_version;
     processMap_["delete_with_version"] = &SimpleDBProcessor::process_delete_with_version;
     processMap_["update_server"] = &SimpleDBProcessor::process_update_server;
+    processMap_["get_v"] = &SimpleDBProcessor::process_get_v;
   }
 
   virtual ~SimpleDBProcessor() {}
@@ -1111,6 +1231,16 @@ class SimpleDBMultiface : virtual public SimpleDBIf {
     ifaces_[i]->update_server();
   }
 
+  void get_v(File& _return, const std::string& url_v, const std::string& url) {
+    size_t sz = ifaces_.size();
+    size_t i = 0;
+    for (; i < (sz - 1); ++i) {
+      ifaces_[i]->get_v(_return, url_v, url);
+    }
+    ifaces_[i]->get_v(_return, url_v, url);
+    return;
+  }
+
 };
 
 // The 'concurrent' client is a thread safe client that correctly handles
@@ -1165,6 +1295,9 @@ class SimpleDBConcurrentClient : virtual public SimpleDBIf {
   void update_server();
   int32_t send_update_server();
   void recv_update_server(const int32_t seqid);
+  void get_v(File& _return, const std::string& url_v, const std::string& url);
+  int32_t send_get_v(const std::string& url_v, const std::string& url);
+  void recv_get_v(File& _return, const int32_t seqid);
  protected:
   boost::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
   boost::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;

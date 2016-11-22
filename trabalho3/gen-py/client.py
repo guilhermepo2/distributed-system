@@ -37,14 +37,26 @@ class DBClient:
         print x
 
         '''
-        client.add("/please/nerf/this", "POR FAVOR NUNCA TE PEDI NADA")
-        x = client.get("/please")
+
+
+        #client.add("/please", "please")
+        #client.add("/please/nerf", "please nerf")
+        #client.add("/please/nerf/this", "POR FAVOR NUNCA TE PEDI NADA")
+        #client.add("/please/nerf/mei", "AGORA")
+        #client.add("/please/i/love/d-va", " carinha triste ")
+        x = client.get_list("/please")
         print x
-        x = client.get("/please/nerf")
+        x = client.get_list("/please/nerf")
         print x
-        x = client.get("/please/nerf/this")
+
+        x = client.get("/please/nerf/mei")
         print x
-        #client.get("/reaper/die/die/die")
+        #x = client.update_with_version("/please/nerf/mei", "nerfa a mai ai pfvr", 0)
+
+        #x = client.delete_file("/please/nerf/mei")
+        print x
+
+
 
 
 

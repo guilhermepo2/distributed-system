@@ -60,6 +60,11 @@ class SimpleDBHandler : virtual public SimpleDBIf {
     printf("update_server\n");
   }
 
+  void get_v(File& _return, const std::string& url_v, const std::string& url) {
+    // Your implementation goes here
+    printf("get_v\n");
+  }
+
 };
 
 int main(int argc, char **argv) {

@@ -111,7 +111,129 @@ private:
     return hash;
   }
 
+  
+  void get_v(File& _return,
+	     const std::string& url_v,
+	     const std::string& url)
+  {
+    std::vector<std::string> verified_tokens = Tokenizer::split(url_v.c_str(), '/');
+    std::vector<std::string> tokens = Tokenizer::split(url.c_str(), '/');
+
+    for(int i = 0 ; i < verified_tokens.size(); i++)
+      {
+	std::cout << "verified: " << verified_tokens[i] << std::endl;
+      }
+
+    for(int i = 0 ; i < tokens.size(); i++)
+      {
+	std::cout << "url: " << tokens[i] << std::endl;
+      }
+
+    /* ----------------------------------------------------
+             THINGS ARE ABOUT TO GET REALLY NASTY
+       ---------------------------------------------------- */
+
+    if(verified_tokens.size() == 1)
+      {
+	std::cout << "trabalha normalmente" << std::endl;
+	std::cout << "" << std::endl;
+	int hash = apply_hash(tokens[verified_tokens.size()].c_str(),
+			      tokens[verified_tokens.size()].size(),
+			      this->ports.size());
+	if(this->ports[hash] != this->myPort)
+	  {
+	    std::string new_v = url_v + "/" + tokens[verified_tokens.size()];
+	    std::cout << "MSG FROM SERVER " << this->myPort << std::endl;
+	    std::cout << "This is not my work!" << std::endl;
+	    std::cout << "This is " << this->ports[hash] << " job!" << std::endl;
+	    shared_ptr<TTransport> socket(new TSocket("localhost", this->ports[hash]));
+	    shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+	    shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+	    SimpleDBClient client(protocol);
+	    transport->open();
+	    client.get_v(_return, new_v, url);
+	    transport->close();
+	  }
+	else {
+	  std::string new_v = url_v + "/" + tokens[verified_tokens.size()];
+	  this->get_v(_return, new_v, url);
+	}
+      }
+    else
+      {
+	std::cout << "verifica urls iguais" << std::endl;
+	bool ok = true;
+	for(int i = 0; i < verified_tokens.size(); i++)
+	  {
+	    if(verified_tokens[i] != tokens[i])
+	      {
+		ok = false;
+		break;
+	      }
+	  }
+
+	if(ok)
+	  {
+	    std::cout << "ok" << std::endl;
+	    if(verified_tokens.size() == tokens.size())
+	      {
+		std::cout << "tamanho igual" << std::endl;
+		Node * result = FileSystem::instance()->search(url);
+
+		if(result != NULL)
+		  {
+		    _return.creation = result->get_creation();
+		    _return.modification = result->get_modification();
+		    _return.version = result->get_version();
+		    _return.name = result->get_name();
+		    _return.content = result->get_data();
+		  }
+	      }
+	    else
+	      {
+		std::cout << "nao tem tamanho igual" << std::endl;
+		std::string new_v = url_v + "/" + tokens[verified_tokens.size()];
+
+		
+		std::cout << "aplicando hash em: " << tokens[verified_tokens.size()] << std::endl;
+		int hash = apply_hash(tokens[verified_tokens.size()].c_str(),
+				      tokens[verified_tokens.size()].size(),
+				      this->ports.size());
+		//std::string new_v = url_v + "/" + tokens[verified_tokens.size()];
+		if(this->ports[hash] != this->myPort)
+		  {
+		    std::cout << "MSG FROM SERVER " << this->myPort << std::endl;
+		    std::cout << "This is not my work!" << std::endl;
+		    std::cout << "This is " << this->ports[hash] << " job!" << std::endl;
+		    shared_ptr<TTransport> socket(new TSocket("localhost", this->ports[hash]));
+		    shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+		    shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+		    SimpleDBClient client(protocol);
+		    transport->open();
+		    client.get_v(_return, new_v, url);
+		    transport->close();
+		  }
+		else
+		  {
+		    this->get_v(_return, new_v, url);
+		  }
+	      }
+	  }
+	else
+	  {
+	    std::cout << "Nao existe o caminho." << std::endl;
+	  }
+      }
+  }
+  
   void get(File& _return, const std::string& url) {
+    /*
+    this->get_v(_return, "", url);
+    return;
+
+    std::cout << "NAO FUNCIONOU" << std::endl;
+    */
+    
 #if DEBUG
     std::cout << "url: " << url << std::endl;
     std::vector<std::string> tokens = Tokenizer::split(url.c_str(), '/');
@@ -123,7 +245,9 @@ private:
 #endif
     
     std::cout << "=========================================" << std::endl;
-    int hash = apply_hash(url.c_str(), url.size(), this->ports.size());
+    std::vector<std::string> tokens = Tokenizer::split(url.c_str(), '/');
+    std::string url_to_hash = tokens[tokens.size() - 1];
+    int hash = apply_hash(url_to_hash.c_str(), url_to_hash.size(), this->ports.size());
 
     if(this->ports[hash] == this->myPort)
       {
@@ -161,7 +285,9 @@ private:
 
   void get_list(std::vector<File> & _return, const std::string& url) {
     std::cout << "=========================================" << std::endl;
-    int hash = apply_hash(url.c_str(), url.size(), this->ports.size());
+    std::vector<std::string> tokens = Tokenizer::split(url.c_str(), '/');
+    std::string url_to_hash = tokens[tokens.size() - 1];
+    int hash = apply_hash(url_to_hash.c_str(), url_to_hash.size(), this->ports.size());
 
     if(this->ports[hash] == this->myPort)
       {
@@ -199,10 +325,12 @@ private:
 
     printf("get_list\n");
   }
-
+  
   version_t add(const std::string& url, const std::string& content) {
 
+    
     std::vector<std::string> tokens = Tokenizer::split(url.c_str(), '/');
+
     if(tokens.size() > 2)
       {
 	File f;
@@ -210,23 +338,19 @@ private:
 	for(int i = 1; i < tokens.size() - 1; i++)
 	  {
 	    url2 += "/" + tokens[i];
+	    std::cout << "estou na verificao da funcao add" << std::endl;
 	    std::cout << url2 << std::endl;
-	    this->get(f, url2);
-	    if(f.name.size() > 0)
+	    Node * result = FileSystem::instance()->search(url2);
+	    if(result == NULL)
 	      {
-		std::cout << "nao nulo" << std::endl;
+		FileSystem::instance()->insert(url2, "");
 	      }
-	    else
-	      {
-		this->add(url2, "");
-	      }
-	    
-	    std::cout << "file: " << f << std::endl;
 	  }
       }
     
     std::cout << "=========================================" << std::endl;
-    int hash = apply_hash(url.c_str(), url.size(), this->ports.size());
+    std::string url_to_hash = tokens[tokens.size() - 1];
+    int hash = apply_hash(url_to_hash.c_str(), url_to_hash.size(), this->ports.size());
 
     if(this->ports[hash] == this->myPort)
       {
@@ -234,6 +358,23 @@ private:
 	std::cout << "It's my work!" << std::endl;
 	std::cout << "url:" << url << std::endl;
 	Node * result = FileSystem::instance()->insert(url, content);
+	/*
+	if(result != NULL)
+	  {
+	    for(int i = 0; i < this->ports.size(); i++)
+	      {
+		if(this->ports[i] != this->myPort)
+		  {
+		    shared_ptr<TTransport> socket(new TSocket("localhost", this->ports[i]));
+		    shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+		    shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+		    SimpleDBClient client(protocol);
+		    transport->open();
+		    client.add(url, "");
+		    transport->close();
+		  }
+	      }
+	      } */
 	printf("add\n");
 	return result->get_version();
       }
@@ -259,7 +400,9 @@ private:
 
   version_t update(const std::string& url, const std::string& content) {
     std::cout << "=========================================" << std::endl;
-    int hash = apply_hash(url.c_str(), url.size(), this->ports.size());
+    std::vector<std::string> tokens = Tokenizer::split(url.c_str(), '/');
+    std::string url_to_hash = tokens[tokens.size() - 1];
+    int hash = apply_hash(url_to_hash.c_str(), url_to_hash.size(), this->ports.size());
 
     if(this->ports[hash] == this->myPort)
       {
@@ -290,7 +433,9 @@ private:
 
   void delete_file(File& _return, const std::string& url) {
     std::cout << "=========================================" << std::endl;
-    int hash = apply_hash(url.c_str(), url.size(), this->ports.size());
+    std::vector<std::string> tokens = Tokenizer::split(url.c_str(), '/');
+    std::string url_to_hash = tokens[tokens.size() - 1];
+    int hash = apply_hash(url_to_hash.c_str(), url_to_hash.size(), this->ports.size());
 
     if(this->ports[hash] == this->myPort)
       {
@@ -322,7 +467,9 @@ private:
 
   version_t update_with_version(const std::string& url, const std::string& content, const version_t version) {
     std::cout << "=========================================" << std::endl;
-    int hash = apply_hash(url.c_str(), url.size(), this->ports.size());
+    std::vector<std::string> tokens = Tokenizer::split(url.c_str(), '/');
+    std::string url_to_hash = tokens[tokens.size() - 1];
+    int hash = apply_hash(url_to_hash.c_str(), url_to_hash.size(), this->ports.size());
 
 
     if(this->ports[hash] == this->myPort)
@@ -363,7 +510,9 @@ private:
 
   void delete_with_version(File& _return, const std::string& url, const version_t version) {
     std::cout << "=========================================" << std::endl;
-    int hash = apply_hash(url.c_str(), url.size(), this->ports.size());
+    std::vector<std::string> tokens = Tokenizer::split(url.c_str(), '/');
+    std::string url_to_hash = tokens[tokens.size() - 1];
+    int hash = apply_hash(url_to_hash.c_str(), url_to_hash.size(), this->ports.size());
 
     if(this->ports[hash] == this->myPort)
       {
