@@ -8,3 +8,13 @@ t1/file_system/test
 t1/server/server
 
 t1/client/client
+
+*.pyc
+
+*.o
+
+*.cf
+
+trabalho4/gen-cpp/myclient
+
+trabalho4/gen-cpp/myserver
