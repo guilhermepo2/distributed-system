@@ -334,18 +334,23 @@ private:
     // pegar os diretorios que eu tenho que criar e as portas responsaveis
 
     if(tokens.size() > 2)
-      {
+      {	
 	File f;
 	std::string url2 = "";
 	for(int i = 1; i < tokens.size() - 1; i++)
 	  {
 	    url2 += "/" + tokens[i];
-	    directories.push_back(url2);
-	    ports_to_send.push_back(
-				    this->ports[apply_hash(tokens[i].c_str(),
-							   tokens[i].size(),
-							   this->ports.size())]
-				    );
+	    File f;
+	    this->get(f, url2);
+	    if(f.name == "")
+	      {
+		directories.push_back(url2);
+		ports_to_send.push_back(
+					this->ports[apply_hash(tokens[i].c_str(),
+							       tokens[i].size(),
+							       this->ports.size())]
+					);
+	      }
 	  }
       }
     
@@ -355,22 +360,43 @@ private:
 	std::cout << "vou inserir " << directories[i] << " na porta " << ports_to_send[i] << std::endl;
       }
 
+    if(directories.size() == 1)
+      {
+	std::cout << "insere direto." << std::endl;
+	// eh 1 so insere direto
+	int x;
+	x = this->add(url, content);
+	return x;
+      }
+
     
     // enviar o vote request
     std::vector<bool> respostas;
     std::string msg;
     for(int i = 0; i < ports_to_send.size(); i++)
       {
+	std::cout << "Vou enviar um vote request para a porta: "
+		  << ports_to_send[i] << std::endl;
 	std::string msg = "";
-	shared_ptr<TTransport> socket(new TSocket("localhost", ports_to_send[i]));
-	shared_ptr<TTransport> transport(new TBufferedTransport(socket));
-	shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
-	SimpleDBClient client(protocol);
-	transport->open();
-	msg = "Operacao add no diretorio " + directories[i] + "\n";
-	respostas.push_back(client.get_response(msg));
-	//v = client.add(directories[i], content);
-	transport->close();
+
+	if(ports_to_send[i] == this->myPort)
+	  {
+	    std::cout << "Opa! Sou eu!" << std::endl;
+	    msg = "Operacao add no diretorio " + directories[i] + "\n";
+	    respostas.push_back(this->get_response(msg));
+	  }
+	else
+	  {
+	    shared_ptr<TTransport> socket(new TSocket("localhost", ports_to_send[i]));
+	    shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+	    shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+	    SimpleDBClient client(protocol);
+	    transport->open();
+	    msg = "Operacao add no diretorio " + directories[i] + "\n";
+	    respostas.push_back(client.get_response(msg));
+	    //v = client.add(directories[i], content);
+	    transport->close();
+	  }
 	// para cada porta:
 	// respostas[i] recebe a resposta do servidor da porta i
 	// verdadeiro -> posso efetuar
@@ -391,14 +417,24 @@ private:
 	std::cout << "Mandando o Global Commit" << std::endl;
 	for(int i = 0; i < ports_to_send.size(); i++)
 	  {
-	    shared_ptr<TTransport> socket(new TSocket("localhost", ports_to_send[i]));
-	    shared_ptr<TTransport> transport(new TBufferedTransport(socket));
-	    shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
-	    SimpleDBClient client(protocol);
-	    transport->open();
-	    client.tw_feedback("Global Commit!");
-	    client.add(directories[i], ("gerado pela insercao de " + url));
-	    transport->close();
+	    if(ports_to_send[i] == this->myPort)
+	      {
+		this->tw_feedback("Global Commit!");
+		std::cout << "A adicionar o diretorio: " << directories[i] << "no servidor: " << ports_to_send[i] << std::endl;
+		this->add(directories[i], ("gerado pela insercao de " + url));
+	      }
+	    else
+	      {
+		shared_ptr<TTransport> socket(new TSocket("localhost", ports_to_send[i]));
+		shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+		shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+		SimpleDBClient client(protocol);
+		transport->open();
+		client.tw_feedback("Global Commit!");
+		std::cout << "A adicionar o diretorio: " << directories[i] << "no servidor: " << ports_to_send[i] << std::endl;
+		client.add(directories[i], ("gerado pela insercao de " + url));
+		transport->close();
+	      }
 	  }
 	
 	int x = add(url, content);
@@ -410,14 +446,20 @@ private:
 	std::cout << "Operacao Abortada!" << std::endl;
 	for(int i = 0; i < ports_to_send.size(); i++)
 	  {
-	    shared_ptr<TTransport> socket(new TSocket("localhost", ports_to_send[i]));
-	    shared_ptr<TTransport> transport(new TBufferedTransport(socket));
-	    shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
-	    SimpleDBClient client(protocol);
-	    transport->open();
-	    client.tw_feedback("Operacao Abortada!");
-	    //v = client.add(directories[i], content);
-	    transport->close();
+	    if(this->myPort == ports_to_send[i])
+	      {
+		this->tw_feedback("Operacao Abortada!");
+	      }
+	    else
+	      {
+		shared_ptr<TTransport> socket(new TSocket("localhost", ports_to_send[i]));
+		shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+		shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+		SimpleDBClient client(protocol);
+		transport->open();
+		client.tw_feedback("Operacao Abortada!");
+		transport->close();
+	      }
 	  }
       }
 
@@ -570,6 +612,26 @@ private:
       }
 
     printf("get_list\n");
+  }
+
+  void delete_file_tw(File& _return, const std::string& url) {
+    Node * result = FileSystem::instance()->search(url);
+
+    // verifica se o nodo tem filhos
+    if(result->get_child_count() > 0)
+      {
+	// tem filhos
+	// pegar diretorio dos filhos e dos filhos dos filhos e dos filhos dos filhos dos filhos e assim vai...
+	// e depois remover todos os diretorios em seu respectivo responsavel (de tras pra frente)
+      }
+    else
+      {
+	// nao tem filhos
+	// so remover
+	this->delete_file(_return,url);
+      }
+    
+    printf("delete_file_tw\n");
   }
 
   void delete_file(File& _return, const std::string& url) {

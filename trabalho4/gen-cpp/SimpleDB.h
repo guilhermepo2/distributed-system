@@ -31,6 +31,7 @@ class SimpleDBIf {
   virtual void update_server() = 0;
   virtual void get_v(File& _return, const std::string& url_v, const std::string& url) = 0;
   virtual version_t add_tw(const std::string& url, const std::string& content) = 0;
+  virtual void delete_file_tw(File& _return, const std::string& url) = 0;
   virtual bool get_response(const std::string& msg) = 0;
   virtual void tw_feedback(const std::string& msg) = 0;
 };
@@ -95,6 +96,9 @@ class SimpleDBNull : virtual public SimpleDBIf {
   version_t add_tw(const std::string& /* url */, const std::string& /* content */) {
     version_t _return = 0;
     return _return;
+  }
+  void delete_file_tw(File& /* _return */, const std::string& /* url */) {
+    return;
   }
   bool get_response(const std::string& /* msg */) {
     bool _return = false;
@@ -1164,6 +1168,110 @@ class SimpleDB_add_tw_presult {
 
 };
 
+typedef struct _SimpleDB_delete_file_tw_args__isset {
+  _SimpleDB_delete_file_tw_args__isset() : url(false) {}
+  bool url :1;
+} _SimpleDB_delete_file_tw_args__isset;
+
+class SimpleDB_delete_file_tw_args {
+ public:
+
+  SimpleDB_delete_file_tw_args(const SimpleDB_delete_file_tw_args&);
+  SimpleDB_delete_file_tw_args& operator=(const SimpleDB_delete_file_tw_args&);
+  SimpleDB_delete_file_tw_args() : url() {
+  }
+
+  virtual ~SimpleDB_delete_file_tw_args() throw();
+  std::string url;
+
+  _SimpleDB_delete_file_tw_args__isset __isset;
+
+  void __set_url(const std::string& val);
+
+  bool operator == (const SimpleDB_delete_file_tw_args & rhs) const
+  {
+    if (!(url == rhs.url))
+      return false;
+    return true;
+  }
+  bool operator != (const SimpleDB_delete_file_tw_args &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const SimpleDB_delete_file_tw_args & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+
+class SimpleDB_delete_file_tw_pargs {
+ public:
+
+
+  virtual ~SimpleDB_delete_file_tw_pargs() throw();
+  const std::string* url;
+
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _SimpleDB_delete_file_tw_result__isset {
+  _SimpleDB_delete_file_tw_result__isset() : success(false) {}
+  bool success :1;
+} _SimpleDB_delete_file_tw_result__isset;
+
+class SimpleDB_delete_file_tw_result {
+ public:
+
+  SimpleDB_delete_file_tw_result(const SimpleDB_delete_file_tw_result&);
+  SimpleDB_delete_file_tw_result& operator=(const SimpleDB_delete_file_tw_result&);
+  SimpleDB_delete_file_tw_result() {
+  }
+
+  virtual ~SimpleDB_delete_file_tw_result() throw();
+  File success;
+
+  _SimpleDB_delete_file_tw_result__isset __isset;
+
+  void __set_success(const File& val);
+
+  bool operator == (const SimpleDB_delete_file_tw_result & rhs) const
+  {
+    if (!(success == rhs.success))
+      return false;
+    return true;
+  }
+  bool operator != (const SimpleDB_delete_file_tw_result &rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator < (const SimpleDB_delete_file_tw_result & ) const;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+  uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+};
+
+typedef struct _SimpleDB_delete_file_tw_presult__isset {
+  _SimpleDB_delete_file_tw_presult__isset() : success(false) {}
+  bool success :1;
+} _SimpleDB_delete_file_tw_presult__isset;
+
+class SimpleDB_delete_file_tw_presult {
+ public:
+
+
+  virtual ~SimpleDB_delete_file_tw_presult() throw();
+  File* success;
+
+  _SimpleDB_delete_file_tw_presult__isset __isset;
+
+  uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+
+};
+
 typedef struct _SimpleDB_get_response_args__isset {
   _SimpleDB_get_response_args__isset() : msg(false) {}
   bool msg :1;
@@ -1409,6 +1517,9 @@ class SimpleDBClient : virtual public SimpleDBIf {
   version_t add_tw(const std::string& url, const std::string& content);
   void send_add_tw(const std::string& url, const std::string& content);
   version_t recv_add_tw();
+  void delete_file_tw(File& _return, const std::string& url);
+  void send_delete_file_tw(const std::string& url);
+  void recv_delete_file_tw(File& _return);
   bool get_response(const std::string& msg);
   void send_get_response(const std::string& msg);
   bool recv_get_response();
@@ -1440,6 +1551,7 @@ class SimpleDBProcessor : public ::apache::thrift::TDispatchProcessor {
   void process_update_server(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_get_v(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_add_tw(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
+  void process_delete_file_tw(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_get_response(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_tw_feedback(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
  public:
@@ -1455,6 +1567,7 @@ class SimpleDBProcessor : public ::apache::thrift::TDispatchProcessor {
     processMap_["update_server"] = &SimpleDBProcessor::process_update_server;
     processMap_["get_v"] = &SimpleDBProcessor::process_get_v;
     processMap_["add_tw"] = &SimpleDBProcessor::process_add_tw;
+    processMap_["delete_file_tw"] = &SimpleDBProcessor::process_delete_file_tw;
     processMap_["get_response"] = &SimpleDBProcessor::process_get_response;
     processMap_["tw_feedback"] = &SimpleDBProcessor::process_tw_feedback;
   }
@@ -1580,6 +1693,16 @@ class SimpleDBMultiface : virtual public SimpleDBIf {
     return ifaces_[i]->add_tw(url, content);
   }
 
+  void delete_file_tw(File& _return, const std::string& url) {
+    size_t sz = ifaces_.size();
+    size_t i = 0;
+    for (; i < (sz - 1); ++i) {
+      ifaces_[i]->delete_file_tw(_return, url);
+    }
+    ifaces_[i]->delete_file_tw(_return, url);
+    return;
+  }
+
   bool get_response(const std::string& msg) {
     size_t sz = ifaces_.size();
     size_t i = 0;
@@ -1658,6 +1781,9 @@ class SimpleDBConcurrentClient : virtual public SimpleDBIf {
   version_t add_tw(const std::string& url, const std::string& content);
   int32_t send_add_tw(const std::string& url, const std::string& content);
   version_t recv_add_tw(const int32_t seqid);
+  void delete_file_tw(File& _return, const std::string& url);
+  int32_t send_delete_file_tw(const std::string& url);
+  void recv_delete_file_tw(File& _return, const int32_t seqid);
   bool get_response(const std::string& msg);
   int32_t send_get_response(const std::string& msg);
   bool recv_get_response(const int32_t seqid);

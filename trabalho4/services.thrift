@@ -32,6 +32,7 @@ service SimpleDB
 
   // two-way handshake
   version_t add_tw(1: string url, 2: string content),
+  File delete_file_tw(1: string url),
   bool get_response(1: string msg),
   void tw_feedback(1: string msg)
 }

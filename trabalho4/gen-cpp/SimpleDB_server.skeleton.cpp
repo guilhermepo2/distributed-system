@@ -70,6 +70,11 @@ class SimpleDBHandler : virtual public SimpleDBIf {
     printf("add_tw\n");
   }
 
+  void delete_file_tw(File& _return, const std::string& url) {
+    // Your implementation goes here
+    printf("delete_file_tw\n");
+  }
+
   bool get_response(const std::string& msg) {
     // Your implementation goes here
     printf("get_response\n");

@@ -34,6 +34,9 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print('  void update_server()')
   print('  File get_v(string url_v, string url)')
   print('  version_t add_tw(string url, string content)')
+  print('  File delete_file_tw(string url)')
+  print('  bool get_response(string msg)')
+  print('  void tw_feedback(string msg)')
   print('')
   sys.exit(0)
 
@@ -149,6 +152,24 @@ elif cmd == 'add_tw':
     print('add_tw requires 2 args')
     sys.exit(1)
   pp.pprint(client.add_tw(args[0],args[1],))
+
+elif cmd == 'delete_file_tw':
+  if len(args) != 1:
+    print('delete_file_tw requires 1 args')
+    sys.exit(1)
+  pp.pprint(client.delete_file_tw(args[0],))
+
+elif cmd == 'get_response':
+  if len(args) != 1:
+    print('get_response requires 1 args')
+    sys.exit(1)
+  pp.pprint(client.get_response(args[0],))
+
+elif cmd == 'tw_feedback':
+  if len(args) != 1:
+    print('tw_feedback requires 1 args')
+    sys.exit(1)
+  pp.pprint(client.tw_feedback(args[0],))
 
 else:
   print('Unrecognized method %s' % cmd)

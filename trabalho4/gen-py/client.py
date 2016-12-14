@@ -25,108 +25,67 @@ class DBClient:
 
         transport.open()
 
-        client.add_tw("/gabe/the/dog", "conteudo")
-        print client.get("/gabe")
-        print client.get("/gabe/the")
-        print client.get("/gabe/the/dog")
-
-        # TESTES
+        # Teses para o protocolo de 2-step commit
+        # Inserindo os nos necessarios
         '''
-        client.add("/teste1/teste2/teste3", "conteudo")
-
-        x = client.get("/teste1")
-        print x
-        x = client.get("/teste1/teste2")
-        print x
-        x = client.get("/teste1/teste2/teste3")
-        print x
-
+        Doggos -> Gabe      -> bork
+                            -> keep-borking
+               -> Pupper    -> sleep-tight
+                            -> study-test
+               -> Shiberino -> wows
+                            -> such-protocol
+                            -> very-coding
         '''
 
-
-        #client.add("/please", "please")
-        #client.add("/please/nerf", "please nerf")
-        #client.add("/please/nerf/this", "POR FAVOR NUNCA TE PEDI NADA")
-        #client.add("/please/nerf/mei", "AGORA")
-        #client.add("/please/i/love/d-va", " carinha triste ")
-
-        # x = client.get("/please/nerf/mei")
-        # print x
-
-        # x = client.get("/please/nerf/this")
-        # print x
-        #x = client.update_with_version("/please/nerf/mei", "nerfa a mai ai pfvr", 0)
-        #print x
-        #x = client.update_with_version("/please/nerf/mei", "nerfa a mai ai pfvr", 0)
-        #print x
-
-        #x = client.delete_file("/please/nerf/mei")
-        #print x
+        # Testando o 2 step commit criando uma url grande de uma vez
+        # ok
+        client.add_tw("/doggos/love/distributed/systems", "right?")
+        print client.get("/doggos/love/distributed/systems")
+        print "Se o arquivo nao esta vazio e porque a insercao deu certo."
 
 
+        client.add_tw("/doggos/gabe", "Gabe, The Dog")
+        client.add_tw("/doggos/gabe/bork", "gabe can bork")
+        client.add_tw("/doggos/gabe/keep-borking", "gabe can bork even more")
+
+        client.add_tw("/doggos/pupper", "Pupper Pupperino")
+        client.add_tw("/doggos/pupper/sleep-tight", "to be blessed with cozy restful sleeps")
+        client.add_tw("/doggos/pupper/study-test", "grant you good grades for the rest of your life")
+
+        client.add_tw("/doggos/shiberino", "Mr. Shiba Shiber")
+        client.add_tw("/doggos/shiberino/wows", "WOW")
+        client.add_tw("/doggos/shiberino/such-protocol", "SUCH PROTOCOL VERY COMMIT")
+        client.add_tw("/doggos/shiberino/very-coding", "We all love shibas")
+
+        # Dando get em todo mundo pra ver se ta certinho
+        a = client.get("/doggos/gabe")
+        b = client.get("/doggos/gabe/bork")
+        c = client.get("/doggos/gabe/keep-borking")
+        if(a.name == ""):
+            print "Hm? Gabe is not here :("
+        else:
+            print "We have a Doggo! His name is {0} AKA {1}, he can {2}({3}) and {4}({5})".format(a.name, a.content, b.name, b.content, c.name, c.content)
+
+        a = client.get("/doggos/pupper/")
+        b = client.get("/doggos/pupper/sleep-tight/")
+        c = client.get("/doggos/pupper/study-test/")
+        if(a.name == ""):
+            print "Hm? Pupper is not here :("
+        else:
+            print "We have a Doggo! His name is {0} AKA {1}, he can {2}({3}) and {4}({5})".format(a.name, a.content, b.name, b.content, c.name, c.content)
+
+        a = client.get("/doggos/shiberino/")
+        b = client.get("/doggos/shiberino/wows")
+        c = client.get("/doggos/shiberino/such-protocol")
+        d = client.get("/doggos/shiberino/very-coding")
+        if(a.name == ""):
+            print "Hm? Shiberino is not here :("
+        else:
+            print "We have a Doggo! His name is {0} AKA {1}, he can {2}({3}), {4}({5}) and {6}({7})".format(a.name, a.content, b.name, b.content, c.name, c.content, d.name, d.content)
 
 
+        # testando o delete_file_tw    
 
-        '''
-        print "adicionando /teste"
-        x = client.add("/teste", "conteudo teste")
-        print "adicionando /teste/a1"
-        x2 = client.add("/teste/a1", "filho1")
-        print "adicionando /teste/a2"
-        x3 = client.add("/teste/a2", "filho2")
-        print ""
-
-        print "get /"
-        f1 = client.get("/")
-        print f1
-
-        print "get /teste"
-        f1 = client.get("teste")
-        print f1
-
-        print "get list /teste"
-        f2 = client.get_list("teste")
-        print f2
-
-        print "update em /teste/a1"
-        f3 = client.update("/teste/a1", "conteudo diferente")
-        print f3
-
-        print "delete /teste/a1"
-        f4 = client.delete_file("/teste/a1")
-        print f4
-
-        print "get list /teste"
-        f2 = client.get_list("teste")
-        print f2
-
-        print "update with version a2 com versao 0"
-        f10 = client.update_with_version("/teste/a2","novo conteudo 2", 0)
-        print f10
-        print "update with version a2 com versao 0"
-        f10 = client.update_with_version("/teste/a2","novo conteudo 3", 0)
-        print f10
-
-        print "get list /teste"
-        f2 = client.get_list("teste")
-        print f2
-
-        print "delete a2 with version 0"
-        f1 = client.delete_with_version("/teste/a2", 0)
-        print f1
-
-        print "get list /teste"
-        f2 = client.get_list("teste")
-        print f2
-
-        print "delete a2 with version 1"
-        f1 = client.delete_with_version("/teste/a2", 1)
-        print f1
-
-        print "get list /teste"
-        f2 = client.get_list("teste")
-        print f2
-        '''
 
         transport.close()
 
