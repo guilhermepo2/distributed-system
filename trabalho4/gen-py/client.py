@@ -42,6 +42,7 @@ class DBClient:
         client.add_tw("/doggos/love/distributed/systems", "right?")
         print client.get("/doggos/love/distributed/systems")
         print "Se o arquivo nao esta vazio e porque a insercao deu certo."
+        print
 
 
         client.add_tw("/doggos/gabe", "Gabe, The Dog")
@@ -65,6 +66,7 @@ class DBClient:
             print "Hm? Gabe is not here :("
         else:
             print "We have a Doggo! His name is {0} AKA {1}, he can {2}({3}) and {4}({5})".format(a.name, a.content, b.name, b.content, c.name, c.content)
+        print
 
         a = client.get("/doggos/pupper/")
         b = client.get("/doggos/pupper/sleep-tight/")
@@ -73,6 +75,7 @@ class DBClient:
             print "Hm? Pupper is not here :("
         else:
             print "We have a Doggo! His name is {0} AKA {1}, he can {2}({3}) and {4}({5})".format(a.name, a.content, b.name, b.content, c.name, c.content)
+        print
 
         a = client.get("/doggos/shiberino/")
         b = client.get("/doggos/shiberino/wows")
@@ -82,9 +85,14 @@ class DBClient:
             print "Hm? Shiberino is not here :("
         else:
             print "We have a Doggo! His name is {0} AKA {1}, he can {2}({3}), {4}({5}) and {6}({7})".format(a.name, a.content, b.name, b.content, c.name, c.content, d.name, d.content)
+        print
 
-
-        # testando o delete_file_tw    
+        # testando o delete_file_tw
+        # testando deletar o pupper, pra isso tem que deletar sleep tight e study-test
+        print "Nodo deletado: "
+        print client.delete_file_tw("/doggos/shiberino")
+        print "Get no nodo deletado: (deve retornar vazio)"
+        print client.get("/doggos/shiberino")
 
 
         transport.close()

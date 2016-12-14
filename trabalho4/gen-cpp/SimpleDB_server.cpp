@@ -283,6 +283,32 @@ private:
     printf("get\n");
   }
 
+
+  void get_list(std::vector<File> & _return, const std::string& url) {
+	Node * result = FileSystem::instance()->search(url);
+
+	if(result == NULL)
+	  return;
+	
+	Node * aux;
+	std::vector<File*> files;
+	for(int i = 0; i < result->get_child_count(); i++)
+	  {
+	    aux = result->get_child(i);
+	    files.push_back(new File());
+	    files[i]->creation = aux->get_creation();
+	    files[i]->modification = aux->get_modification();
+	    files[i]->version = aux->get_version();
+	    files[i]->name = aux->get_name();
+	    files[i]->content = aux->get_data();
+
+	    _return.push_back(*(files[i]));
+	  }
+
+    printf("get_list\n");
+  }
+  
+  /* ESSA VERSAO DO GET LIST MANDA A REQUISICAO PRA OUTROS SERVIDORES
   void get_list(std::vector<File> & _return, const std::string& url) {
     std::cout << "=========================================" << std::endl;
     std::vector<std::string> tokens = Tokenizer::split(url.c_str(), '/');
@@ -325,6 +351,7 @@ private:
 
     printf("get_list\n");
   }
+  */
 
   version_t add_tw(const std::string& url, const std::string& content) {
     std::vector<std::string> tokens = Tokenizer::split(url.c_str(), '/');
@@ -620,9 +647,151 @@ private:
     // verifica se o nodo tem filhos
     if(result->get_child_count() > 0)
       {
-	// tem filhos
-	// pegar diretorio dos filhos e dos filhos dos filhos e dos filhos dos filhos dos filhos e assim vai...
-	// e depois remover todos os diretorios em seu respectivo responsavel (de tras pra frente)
+	std::vector<std::string> diretorios_a_remover;
+	std::vector<std::string> diretorios_a_verificar;
+	std::cout << "Tem mais de um filho!" << std::endl;
+	diretorios_a_remover.push_back(url);
+	diretorios_a_verificar.push_back(url);
+	
+	while(diretorios_a_verificar.size() > 0)
+	  {
+	    std::string diretorio = diretorios_a_verificar[0];
+	    diretorios_a_verificar.erase(diretorios_a_verificar.begin());
+	    
+	    std::vector<File> filhos;
+
+	    for(int i = 0; i < this->ports.size(); i++)
+	      {
+		std::cout << "quero os filhos de " << diretorio << " que a porta " << this->ports[i] << " conhece." << std::endl;
+		if(this->ports[i] == this->myPort)
+		  {
+		    this->get_list(filhos, diretorio);
+		  }
+		else
+		  {
+		    // conectado com o servidor e manda o get list
+		    shared_ptr<TTransport> socket(new TSocket("localhost", this->ports[i]));
+		    shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+		    shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+		    SimpleDBClient client(protocol);
+		    transport->open();
+		    client.get_list(filhos,diretorio);
+		    transport->close();
+		  }
+
+			    
+		for(int i = 0; i < filhos.size(); i++)
+		  {
+		    diretorios_a_remover.push_back(diretorio+"/"+filhos[i].name);
+		    diretorios_a_verificar.push_back(diretorio+"/"+filhos[i].name);
+		  }
+		filhos.clear();
+	      }
+	  }
+
+	std::cout << "Verifiquei!" << std::endl;
+	std::cout << "Esses sao os diretories que devem ser deletados: " << std::endl;
+	for(int i = 0; i < diretorios_a_remover.size(); i++)
+	  {
+	    std::cout << diretorios_a_remover[i] << std::endl;
+	  }
+
+	// agora comeca o protocolo para remover todos
+	// verificando para quais portas devo mandar cada comando
+	std::vector<int> ports_to_send;
+	for(int i = 0; i < diretorios_a_remover.size(); i++)
+	  {
+	    std::vector<std::string> tokens = Tokenizer::split(diretorios_a_remover[i].c_str(),
+							       '/');
+	    ports_to_send.push_back(this->ports[apply_hash(tokens[tokens.size()-1].c_str(),
+							   tokens[tokens.size()-1].size(),
+							   this->ports.size())]);
+	  }
+
+	std::cout << "os comandos para remover devem ser enviados para as portas: " << std::endl;
+	for(int i = 0 ; i < ports_to_send.size(); i++)
+	  {
+	    std::cout << ports_to_send[i] << std::endl;
+	  }
+	
+	// enviando os vote requests
+	std::vector<bool> respostas;
+	std::string msg;
+	for(int i = 0; i < ports_to_send.size(); i++)
+	  {
+	    std::cout << "Enviando vote request para a porta : "
+		      << ports_to_send[i] << std::endl;
+	    std::string msg = "";
+	    if(ports_to_send[i] == this->myPort)
+	      {
+		msg = "Operacao de delete no diretorio: " + diretorios_a_remover[i] + "\n";
+		respostas.push_back(this->get_response(msg));
+	      }
+	    else
+	      {
+		shared_ptr<TTransport> socket(new TSocket("localhost", ports_to_send[i]));
+		shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+		shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+		SimpleDBClient client(protocol);
+		transport->open();
+		msg = "Operacao de delete no diretorio " + diretorios_a_remover[i] + "\n";
+		respostas.push_back(client.get_response(msg));
+		
+		transport->close();
+	      }
+	  }
+
+	// enviei os vote requests,a gora tenho que ver as respostas...
+	bool global = true;
+	for(int i = 0; i < respostas.size(); i++)
+	  {
+	    global = global && respostas[i];
+	  }
+
+	if(global)
+	  {
+	    // global commit
+	    std::cout << "GLOBAL COMMIT" << std::endl;
+	    // percorrer os diretorios de tras pra frente e remove-los
+	    for(int i = diretorios_a_remover.size() - 1; i >= 0; i--)
+	      {
+		std::cout << "removendo: " << diretorios_a_remover[i] << std::endl;
+		if(ports_to_send[i] == this->myPort)
+		  {
+		    this->delete_file(_return, diretorios_a_remover[i]);
+		  }
+		else
+		  {
+		    shared_ptr<TTransport> socket(new TSocket("localhost", ports_to_send[i]));
+		    shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+		    shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+		    SimpleDBClient client(protocol);
+		    transport->open();
+		    client.tw_feedback("Global Commit!");
+		    client.delete_file(_return, diretorios_a_remover[i]);
+		    
+		    transport->close();
+		  }
+	      }
+	  }
+	else
+	  {
+	    // global abort
+	    std::cout << "Operacao abortada!" << std::endl;
+	    for(int i = 0; i < ports_to_send.size(); i++)
+	      {
+		if(this->myPort != ports_to_send[i])
+		  {
+		    shared_ptr<TTransport> socket(new TSocket("localhost", ports_to_send[i]));
+		    shared_ptr<TTransport> transport(new TBufferedTransport(socket));
+		    shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
+		    SimpleDBClient client(protocol);
+		    transport->open();
+		    client.tw_feedback("Operacao Abortada pelo Coordenador!");
+		    transport->close();
+		  }
+	      }
+	  }
       }
     else
       {
